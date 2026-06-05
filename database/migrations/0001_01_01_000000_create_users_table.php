@@ -15,6 +15,15 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('primary_phone')->unique();
+            $table->string('secondary_phone')->nullable()->unique();
+            $table->enum('type', [
+                'admin',
+                'resident',
+                'service_provider',
+                'property_owner'
+            ])->index();
+            $table->boolean('is_blocked')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
