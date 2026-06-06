@@ -10,3 +10,8 @@ Route::prefix('v1/auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/logout', [AuthController::class, 'logout']);
 });
+
+
+Route::get('/ping', function () {
+    return 'ok';
+});
