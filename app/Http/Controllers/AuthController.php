@@ -16,7 +16,7 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        // Handle registration logic here
+        
     }
 
     public function logout(Request $request)

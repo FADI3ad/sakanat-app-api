@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\User;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class LoginService {
