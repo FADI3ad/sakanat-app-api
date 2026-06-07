@@ -3,36 +3,23 @@
 namespace App\Services;
 
 use App\Models\User;
-use Exception;
 use Illuminate\Support\Facades\Hash;
 
-class LoginService {
+class LoginService
+{
+    public function login(array $data): array
+    {
+        $user = User::where('email', $data['email'])->first();
 
-    
-    public function login(array $data){
-
-
-        $user  = User::where('email' , '=' , $data['email'])->first();
-
-        if(!$user  || !Hash::check($data['password'], $user->password)){
-            throw new Exception('Invalid credentials');
+        if (!$user || !Hash::check($data['password'], $user->password)) {
+            throw new \Exception('Invalid credentials');
         }
-        
-    
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'type' => $user->type,
-                ],
-                'token' => $token,
-            ],
-        ], 200);
-
+        return [
+            'user' => $user,
+            'token' => $token,
+        ];
     }
-} 
+}
