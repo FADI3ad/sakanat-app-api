@@ -22,11 +22,17 @@ class LoginService {
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'id'=>$user->id,
-            'name'=>$user->name,
-            'type'=>$user->type,
-            'token'=>$token
-        ]);
+            'success' => true,
+            'message' => 'Login successful',
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'type' => $user->type,
+                ],
+                'token' => $token,
+            ],
+        ], 200);
 
     }
 } 
