@@ -20,4 +20,12 @@ class Service extends Model
         return 'slug';
     }
 
+
+    public function providers()
+    {
+        return $this->belongsToMany(Provider::class)
+            ->using(ProviderService::class)
+            ->withPivot('properties')
+            ->withTimestamps();
+    }
 }

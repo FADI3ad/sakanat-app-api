@@ -21,9 +21,9 @@ class User extends Authenticatable
     use HasFactory,HasApiTokens, Notifiable;
 
 
-    public function serviceProvider(): HasOne
+    public function provider(): HasOne
     {
-        return $this->hasOne(ServiceProvider::class);
+        return $this->hasOne(Provider::class);
     }
 
 
