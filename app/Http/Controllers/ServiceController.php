@@ -9,7 +9,7 @@ class ServiceController extends Controller
 {
     public function index()
     {
-        $services = Service::paginate(10);
+        $services = Service::where('status', true)->orderBy('sort_order')->paginate(10);
         return response()->json([
             'status' => true,
             'message' => 'تم استرجاع الخدمات بنجاح',
@@ -18,6 +18,7 @@ class ServiceController extends Controller
                 return [
                     'slug' => $services->slug,
                     'title' => $services->title,
+                    'description' => $services->description,
                     'image' => $services->image ? asset('storage/' . $services->image) : null,
                 ];
             }),

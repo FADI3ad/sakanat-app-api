@@ -15,8 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->string('primary_phone')->unique();
-            $table->string('secondary_phone')->nullable()->unique();    
+            $table->string('phone')->unique();  
             $table->string('type')->default('user');
             $table->boolean('is_blocked')->default(false);
             $table->timestamp('email_verified_at')->nullable();
