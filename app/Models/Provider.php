@@ -18,6 +18,10 @@ class Provider extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function printServices()
+    {
+        return $this->hasMany(PrintService::class);
+    }
 
 
 }

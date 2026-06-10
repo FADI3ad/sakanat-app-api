@@ -4,9 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Model;
-
 #[Guarded(['id'])]
-class Service extends Model
+class Area extends Model
 {
     
 
@@ -15,7 +14,4 @@ class Service extends Model
     {
         return $this->hasMany(PrintService::class);
     }
-
-
-    
 }
