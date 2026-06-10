@@ -15,4 +15,8 @@ Route::prefix('v1/auth')->group(function () {
 
 Route::prefix('v1')->group(function () {
     Route::apiResource('/services', ServiceController::class);
+    Route::get('/services/{service}/providers', [ServiceController::class, 'provider']);
+    
 });
+
+

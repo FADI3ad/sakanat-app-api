@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ProviderService;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -20,22 +21,15 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test',
             'email' => 'test@example.com',
             'password' => bcrypt('password'),
-            'primary_phone' => '1234567890',
+            'phone' => '1234567890',
             'type' => 'admin'
         ]);
-
-        Service::create([
-            'title' => 'غسيل ',
-            'slug' => 'Gasel',
-            'description' => 'وصف الخدمة 1',
-            'status' => true,
+        
+        $this->call([
+            ServiceSeeder::class,
         ]);
 
-        Service::create([
-            'title' => 'تنظيف',
-            'slug' => 'Tanzif',
-            'description' => 'وصف الخدمة 2',
-            'status' => true,
-        ]);
+
+
     }
 }

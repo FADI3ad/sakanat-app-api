@@ -2,30 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Model;
-use Spatie\Sluggable\Attributes\Sluggable;
 use Spatie\Sluggable\HasSlug;
+use Spatie\Sluggable\SlugOptions;
 
-
-#[Sluggable(from: 'title', to: 'slug')]
-#[Guarded(['id'])]
 class Service extends Model
 {
+    use HasSlug;
 
+    protected $guarded = ['id'];
 
-
-    public function getRouteKeyName(): string
+    public function getSlugOptions(): SlugOptions
     {
-        return 'slug';
-    }
-
-
-    public function providers()
-    {
-        return $this->belongsToMany(Provider::class)
-            ->using(ProviderService::class)
-            ->withPivot('properties')
-            ->withTimestamps();
+        return SlugOptions::create()
+            ->generateSlugsFrom('title')
+            ->saveSlugsTo('slug');
     }
 }

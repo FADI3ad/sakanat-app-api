@@ -19,7 +19,7 @@ class ServiceController extends Controller
                     'slug' => $services->slug,
                     'title' => $services->title,
                     'description' => $services->description,
-                    'image' => $services->image ? asset('storage/' . $services->image) : null,
+                    'icon' => $services->icon ? asset('storage/' . $services->icon) : null,
                 ];
             }),
             'meta' => [
@@ -48,9 +48,30 @@ class ServiceController extends Controller
                 'slug' => $service->slug,
                 'title' => $service->title,
                 'description' => $service->description,
-                'image' => $service->image ? asset('storage/' . $service->image) : null,
+                'icon' => $service->icon ? asset('storage/' . $service->icon) : null,
                 'status' => $service->status,
             ],
         ], 200);
     }
+
+
+
+
+
+    public function provider(Service $service)
+    {
+        $providers = $service->with('providers')->get()->pluck('providers')->flatten();
+        return response()->json([
+            'status' => true,
+            'message' => 'تم استرجاع مزودي الخدمة بنجاح',
+            'data' => $providers->map(function ($provider) {
+                return [
+                    'id' => $provider->id,
+                    'name' => $provider->name,
+
+                ];
+            }),
+        ], 200);
+    }
+    
 }

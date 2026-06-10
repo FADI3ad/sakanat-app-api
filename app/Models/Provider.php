@@ -19,12 +19,5 @@ class Provider extends Model
     }
 
 
-    public function services()
-    {
-        return $this->belongsToMany(Service::class)
-            ->using(ProviderService::class)
-            ->withPivot('properties')
-            ->withTimestamps();
-    }
 
 }
