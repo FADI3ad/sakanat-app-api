@@ -2,8 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\ProviderService;
-use App\Models\Service;
+
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -27,8 +26,9 @@ class DatabaseSeeder extends Seeder
         
         $this->call([
             ServiceSeeder::class,
+            AreaSeeder::class,
+            PrintServiceSeeder::class,
         ]);
-
 
 
     }

@@ -20,7 +20,7 @@ class Provider extends Model
 
     public function printServices()
     {
-        return $this->hasMany(PrintService::class);
+        return $this->hasOne(PrintService::class);
     }
 
 
