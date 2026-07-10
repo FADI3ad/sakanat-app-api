@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -24,6 +25,22 @@ class User extends Authenticatable
     public function provider(): HasOne
     {
         return $this->hasOne(Provider::class);
+    }
+
+    /**
+     * Get all contact messages sent by this user.
+     */
+    public function contactMessages(): HasMany
+    {
+        return $this->hasMany(ContactMessage::class);
+    }
+
+    /**
+     * Get all comments written by this user.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(ServiceComment::class);
     }
 
 

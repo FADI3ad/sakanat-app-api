@@ -5,24 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Guarded(['id'])]
-class Provider extends Model
+class ContactMessage extends Model
 {
     /**
-     * Get the user associated with this provider.
+     * Get the user who sent the contact message.
      */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Get all services listed by this provider.
-     */
-    public function services(): HasMany
-    {
-        return $this->hasMany(Service::class);
     }
 }

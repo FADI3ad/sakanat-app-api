@@ -4,32 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Guarded(['id'])]
 class Service extends Model
 {
     /**
-     * Map each service title to its specific model class.
-     * When a new service type is added, register its model here.
+     * Get the provider that owns this service.
      */
-    public static function serviceModelMap(): array
+    public function provider(): BelongsTo
     {
-        return [
-            'خدمات الطباعة والتصوير' => PrintService::class,
-        ];
+        return $this->belongsTo(Provider::class);
     }
 
     /**
-     * Resolve the specific model class for this service instance.
-     * Returns null if no model is mapped yet.
+     * Get the area where the service is available.
      */
-    public function resolveServiceModel(): ?string
+    public function area(): BelongsTo
     {
-        return static::serviceModelMap()[$this->title] ?? null;
+        return $this->belongsTo(Area::class);
     }
 
-    public function printServices()
+    /**
+     * Get the type of the service.
+     */
+    public function type(): BelongsTo
     {
-        return $this->hasMany(PrintService::class);
+        return $this->belongsTo(Type::class);
+    }
+
+    /**
+     * Get all active comments for this service.
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(ServiceComment::class);
     }
 }

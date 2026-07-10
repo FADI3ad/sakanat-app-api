@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\PrintService;
 use App\Models\Service;
+use App\Models\Type;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,16 +15,15 @@ class ServiceRefactorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Seed the database
         $this->seed(DatabaseSeeder::class);
     }
 
     /**
-     * Test list of base services.
+     * Test list of types.
      */
-    public function test_can_list_base_services()
+    public function test_can_list_types()
     {
-        $response = $this->getJson('/api/v1/services');
+        $response = $this->getJson('/api/v1/types');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -33,8 +32,10 @@ class ServiceRefactorTest extends TestCase
                 'data' => [
                     '*' => [
                         'id',
-                        'title',
+                        'name',
                         'description',
+                        'sort_order',
+                        'status',
                         'icon',
                     ]
                 ],
@@ -48,55 +49,56 @@ class ServiceRefactorTest extends TestCase
     }
 
     /**
-     * Test show a specific base service.
+     * Test show a specific type.
      */
-    public function test_can_show_base_service()
+    public function test_can_show_type()
     {
-        $service = Service::first();
+        $type = Type::first();
 
-        $response = $this->getJson("/api/v1/services/{$service->id}");
+        $response = $this->getJson("/api/v1/types/{$type->id}");
 
         $response->assertStatus(200)
             ->assertJson([
                 'status'  => true,
-                'message' => 'تم استرجاع الخدمة بنجاح',
+                'message' => 'تم استرجاع تفاصيل نوع الخدمة بنجاح',
                 'data'    => [
-                    'id'          => $service->id,
-                    'title'       => $service->title,
-                    'description' => $service->description,
-                    'icon'        => $service->icon,
-                    'status'      => (int) $service->status,
+                    'id'          => $type->id,
+                    'name'        => $type->name,
+                    'description' => $type->description,
+                    'sort_order'  => $type->sort_order,
+                    'status'      => (bool) $type->status,
+                    'icon'        => $type->icon,
                 ]
             ]);
     }
 
     /**
-     * Test listing of print services.
+     * Test listing of services.
      */
-    public function test_can_list_print_services()
+    public function test_can_list_services()
     {
-        $response = $this->getJson('/api/v1/print-services');
+        $response = $this->getJson('/api/v1/services');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'status',
                 'message',
-                'service' => [
-                    'id',
-                    'title',
-                ],
                 'data' => [
                     '*' => [
                         'id',
-                        'provider_name',
-                        'phone',
                         'title',
+                        'description',
                         'image',
-                        'area',
+                        'is_available',
                         'delivery_available',
-                        'has_color_option',
-                        'black_and_white_price_per_page',
-                        'color_price_per_page',
+                        'price',
+                        'area',
+                        'type',
+                        'provider' => [
+                            'id',
+                            'name',
+                            'phone',
+                        ]
                     ]
                 ],
                 'meta' => [
@@ -109,115 +111,79 @@ class ServiceRefactorTest extends TestCase
     }
 
     /**
-     * Test showing details of a specific print service.
+     * Test showing details of a specific service.
      */
-    public function test_can_show_print_service_details()
+    public function test_can_show_service_details()
     {
-        $printService = PrintService::first();
+        $service = Service::first();
 
-        $response = $this->getJson("/api/v1/print-services/{$printService->id}");
+        $response = $this->getJson("/api/v1/services/{$service->id}");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'status',
                 'message',
-                'service' => [
-                    'id',
-                    'title',
-                ],
                 'data' => [
                     'id',
                     'title',
                     'description',
                     'image',
-                    'area',
-                    'delivery_available',
-                    'has_color_option',
-                    'black_and_white_price_per_page',
-                    'color_price_per_page',
                     'is_available',
+                    'delivery_available',
+                    'price',
+                    'area',
+                    'type',
                     'provider' => [
                         'id',
                         'name',
                         'phone',
-                        'email',
-                        'address',
                     ]
                 ]
             ]);
     }
 
     /**
-     * Test nested service listings.
+     * Test listing services filtered by a specific type.
      */
-    public function test_can_get_nested_service_listings()
+    public function test_can_list_services_by_type()
     {
-        $service = Service::first(); // ID 1
+        $type = Type::first();
 
-        $response = $this->getJson("/api/v1/services/{$service->id}/listings");
+        $response = $this->getJson("/api/v1/types/{$type->id}/services");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'status',
                 'message',
-                'service' => [
-                    'id',
-                    'title',
-                ],
+                'type' => ['id', 'name'],
                 'data' => [
                     '*' => [
                         'id',
-                        'provider_name',
-                        'phone',
                         'title',
+                        'description',
                         'image',
-                        'area',
+                        'is_available',
                         'delivery_available',
-                        'has_color_option',
-                        'black_and_white_price_per_page',
-                        'color_price_per_page',
+                        'price',
+                        'area',
+                        'provider' => ['id', 'name', 'phone'],
                     ]
-                ]
-            ]);
-    }
-
-    /**
-     * Test nested service listing details.
-     */
-    public function test_can_get_nested_service_listing_details()
-    {
-        $service = Service::first(); // ID 1
-        $printService = PrintService::first();
-
-        $response = $this->getJson("/api/v1/services/{$service->id}/listings/{$printService->id}");
-
-        $response->assertStatus(200)
-            ->assertJsonStructure([
-                'status',
-                'message',
-                'service' => [
-                    'id',
-                    'title',
                 ],
-                'data' => [
-                    'id',
-                    'title',
-                    'description',
-                    'image',
-                    'area',
-                    'delivery_available',
-                    'has_color_option',
-                    'black_and_white_price_per_page',
-                    'color_price_per_page',
-                    'is_available',
-                    'provider' => [
-                        'id',
-                        'name',
-                        'phone',
-                        'email',
-                        'address',
-                    ]
-                ]
+                'meta' => ['total', 'per_page', 'current_page', 'last_page'],
+            ])
+            ->assertJson([
+                'status' => true,
+                'type'   => [
+                    'id'   => $type->id,
+                    'name' => $type->name,
+                ],
             ]);
+
+        // All returned services belong to this type
+        $data = $response->json('data');
+        $typeServiceIds = $type->services()->pluck('id')->toArray();
+        foreach ($data as $item) {
+            $this->assertContains($item['id'], $typeServiceIds);
+        }
     }
 }

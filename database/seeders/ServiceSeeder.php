@@ -2,50 +2,107 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserTypeEnum;
+use App\Models\Area;
 use App\Models\Service;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Provider;
+use App\Models\Type;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class ServiceSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $services = [
+        $printType = Type::where('name', 'خدمات الطباعة والتصوير')->first();
+
+        if (!$printType) {
+            $this->command->warn('⚠️ لم يتم العثور على نوع الطباعة، تأكد من تشغيل TypeSeeder أولاً.');
+            return;
+        }
+
+        $providersData = [
             [
-                'title' => 'خدمات الطباعة والتصوير',
-                'description' => 'نقدم خدمات الطباعة والتصوير للوثائق والمواد المختلفة.',
-                'icon' => null,
-                'status' => true,
-                'sort_order' => 1,
+                'user' => [
+                    'name'     => 'ابانوب',
+                    'email'    => 'ahmed.print@test.com',
+                    'phone'    => '01000000001',
+                    'password' => Hash::make('password'),
+                    'type'     => UserTypeEnum::PROVIDER->value,
+                ],
+                'listing' => [
+                    'title'              => 'مركز ابانوب للطباعة',
+                    'description'        => 'خدمات طباعة سريعة وعالية الجودة، متاح 24 ساعة.',
+                    'is_available'       => true,
+                    'delevery_available' => true,
+                    'price'              => 15.00,
+                    'area_name'          => 'مدينة نصر',
+                ],
             ],
             [
-                'title' => 'خدمات الغسيل والمكواة',
-                'description' => 'نقدم خدمات الغسيل والمكواة للملابس والمواد المختلفة.',
-                'icon' => null,
-                'status' => true,
-                'sort_order' => 2,
+                'user' => [
+                    'name'     => 'سارة',
+                    'email'    => 'sara.print@test.com',
+                    'phone'    => '01000000002',
+                    'password' => Hash::make('password'),
+                    'type'     => UserTypeEnum::PROVIDER->value,
+                ],
+                'listing' => [
+                    'title'              => 'مركز سارة للطباعة',
+                    'description'        => 'طباعة ليزر وإنكجت، تجليد، لاميناشن.',
+                    'is_available'       => true,
+                    'delevery_available' => false,
+                    'price'              => 12.50,
+                    'area_name'          => 'المعادي',
+                ],
             ],
             [
-                'title' => 'خدمات المواصلات',
-                'description' => 'نقدم خدمات المواصلات لنقل الأشخاص والبضائع.',
-                'icon' => null,
-                'status' => true,
-                'sort_order' => 3,
-            ],
-            [
-                'title' => 'خدمات الطعام والتوصيل',
-                'description' => 'نقدم خدمات الطعام والتوصيل للطلبات المختلفة.',
-                'icon' => null,
-                'status' => true,
-                'sort_order' => 4,
+                'user' => [
+                    'name'     => 'محمد خالة',
+                    'email'    => 'mohamed.print@test.com',
+                    'phone'    => '01000000003',
+                    'password' => Hash::make('password'),
+                    'type'     => UserTypeEnum::PROVIDER->value,
+                ],
+                'listing' => [
+                    'title'              => 'مركز محمد للطباعة',
+                    'description'        => 'طباعة وتصوير، خدمة التوصيل للجامعات.',
+                    'is_available'       => true,
+                    'delevery_available' => true,
+                    'price'              => 10.00,
+                    'area_name'          => 'الدقي',
+                ],
             ],
         ];
 
-        foreach ($services as $service) {
-            Service::create($service);
+        foreach ($providersData as $data) {
+            $user = User::firstOrCreate(
+                ['email' => $data['user']['email']],
+                $data['user']
+            );
+
+            $provider = Provider::firstOrCreate(['user_id' => $user->id]);
+
+            $area = Area::where('name', $data['listing']['area_name'])->first();
+
+            if (!$area) {
+                $this->command->warn("⚠️ منطقة '{$data['listing']['area_name']}' غير موجودة، تأكد من تشغيل AreaSeeder أولاً.");
+                continue;
+            }
+
+            Service::firstOrCreate(
+                ['title' => $data['listing']['title']],
+                [
+                    'description'        => $data['listing']['description'],
+                    'is_available'       => $data['listing']['is_available'],
+                    'delevery_available' => $data['listing']['delevery_available'],
+                    'price'              => $data['listing']['price'],
+                    'provider_id'        => $provider->id,
+                    'type_id'            => $printType->id,
+                    'area_id'            => $area->id,
+                ]
+            );
         }
     }
 }
