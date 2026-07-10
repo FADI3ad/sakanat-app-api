@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('print_services', function (Blueprint $table) {
             $table->id();
-            $table->string('slug')->unique();
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('image')->nullable();

@@ -15,7 +15,6 @@ class ServiceSeeder extends Seeder
     {
         $services = [
             [
-                'slug' => \Illuminate\Support\Str::slug('خدمات الطباعة والتصوير'),
                 'title' => 'خدمات الطباعة والتصوير',
                 'description' => 'نقدم خدمات الطباعة والتصوير للوثائق والمواد المختلفة.',
                 'icon' => null,
@@ -23,7 +22,6 @@ class ServiceSeeder extends Seeder
                 'sort_order' => 1,
             ],
             [
-                'slug' => \Illuminate\Support\Str::slug('خدمات الغسيل والمكواة'),
                 'title' => 'خدمات الغسيل والمكواة',
                 'description' => 'نقدم خدمات الغسيل والمكواة للملابس والمواد المختلفة.',
                 'icon' => null,
@@ -31,7 +29,6 @@ class ServiceSeeder extends Seeder
                 'sort_order' => 2,
             ],
             [
-                'slug' => \Illuminate\Support\Str::slug('خدمات المواصلات'),
                 'title' => 'خدمات المواصلات',
                 'description' => 'نقدم خدمات المواصلات لنقل الأشخاص والبضائع.',
                 'icon' => null,
@@ -39,7 +36,6 @@ class ServiceSeeder extends Seeder
                 'sort_order' => 3,
             ],
             [
-                'slug' => \Illuminate\Support\Str::slug('خدمات الطعام والتوصيل'),
                 'title' => 'خدمات الطعام والتوصيل',
                 'description' => 'نقدم خدمات الطعام والتوصيل للطلبات المختلفة.',
                 'icon' => null,

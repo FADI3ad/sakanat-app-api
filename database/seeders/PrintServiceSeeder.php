@@ -16,7 +16,7 @@ class PrintServiceSeeder extends Seeder
 {
     public function run(): void
     {
-        $printServiceType = Service::where('slug', Str::slug('خدمات الطباعة والتصوير'))->first();
+        $printServiceType = Service::where('title', 'خدمات الطباعة والتصوير')->first();
 
         if (!$printServiceType) {
             $this->command->warn('⚠️  لم يتم العثور على خدمة الطباعة، تأكد من تشغيل ServiceSeeder أولاً.');
@@ -102,9 +102,8 @@ class PrintServiceSeeder extends Seeder
             }
 
             PrintService::firstOrCreate(
-                ['slug' => $data['listing']['slug']],
+                ['title' => $data['listing']['title']],
                 [
-                    'title'                          => $data['listing']['title'],
                     'description'                    => $data['listing']['description'],
                     'is_available'                   => $data['listing']['is_available'],
                     'delevery_available'             => $data['listing']['delevery_available'],

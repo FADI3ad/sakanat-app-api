@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('areas', function (Blueprint $table) {
             $table->id();
-            $table->string('slug')->unique();
             $table->string('name')->unique();
             $table->timestamps();
         });

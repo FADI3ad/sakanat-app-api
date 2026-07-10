@@ -25,7 +25,6 @@ class AreaSeeder extends Seeder
 
         foreach ($areas as $name) {
             Area::firstOrCreate(
-                ['slug' => Str::slug($name)],
                 ['name' => $name]
             );
         }
