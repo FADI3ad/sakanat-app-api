@@ -23,6 +23,13 @@ class DatabaseSeeder extends Seeder
             'phone' => '1234567890',
             'type' => 'admin'
         ]);
+        User::create([
+            'name' => 'Fadi',
+            'email' => 'Fadi@example.com',
+            'password' => bcrypt('password'),
+            'phone' => '12345678901',
+            'type' => 'property_owner'   
+        ]);
         
         $this->call([
             TypeSeeder::class,

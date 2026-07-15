@@ -14,8 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'provider' => \App\Http\Middleware\EnsureUserIsProvider::class,
-            'admin'    => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'provider'       => \App\Http\Middleware\EnsureUserIsProvider::class,
+            'admin'          => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'property_owner' => \App\Http\Middleware\EnsureUserIsPropertyOwner::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

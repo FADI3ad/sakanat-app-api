@@ -5,6 +5,7 @@ use App\Http\Controllers\TypeController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ServiceCommentController;
+use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -86,6 +87,15 @@ Route::prefix('v1')->group(function () {
             Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
         });
 
+        // --- Property Owner Routes ---
+        Route::middleware(['property_owner'])->group(function () {
+            Route::get('/properties/my', [PropertyController::class, 'myProperties']);
+            Route::post('/properties', [PropertyController::class, 'store']);
+            Route::get('/properties/{property}', [PropertyController::class, 'show']);
+            Route::put('/properties/{property}', [PropertyController::class, 'update']);
+            Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
+        });
+
         // --- Admin-Only Routes ---
         Route::middleware(['admin'])->prefix('admin')->group(function () {
 
@@ -110,6 +120,16 @@ Route::prefix('v1')->group(function () {
             Route::get('/comments', [ServiceCommentController::class, 'adminIndex']);
             Route::patch('/comments/{serviceComment}/toggle', [ServiceCommentController::class, 'toggle']);
             Route::delete('/comments/{serviceComment}', [ServiceCommentController::class, 'destroy']);
+
+            /*
+             * Admin: Properties Management
+             * - GET    /admin/properties                    : List all properties
+             * - GET    /admin/properties/{property}         : Show specific property
+             * - DELETE /admin/properties/{property}         : Delete a property
+             */
+            Route::get('/properties', [PropertyController::class, 'adminIndex']);
+            Route::get('/properties/{property}', [PropertyController::class, 'adminShow']);
+            Route::delete('/properties/{property}', [PropertyController::class, 'adminDestroy']);
         });
     });
 });

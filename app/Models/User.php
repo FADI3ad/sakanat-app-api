@@ -43,6 +43,14 @@ class User extends Authenticatable
         return $this->hasMany(ServiceComment::class);
     }
 
+    /**
+     * Get all properties owned by this user (if property_owner).
+     */
+    public function properties(): HasMany
+    {
+        return $this->hasMany(Property::class, 'user_id');
+    }
+
 
     protected function casts(): array
     {
