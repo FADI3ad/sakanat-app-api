@@ -65,8 +65,18 @@ class PropertyController extends Controller
     */
     public function store(StorePropertyRequest $request)
     {
+        $userId = $request->user()->id;
+        $alreadyExists = Property::where('user_id', $userId)->exists();
+
+        if ($alreadyExists) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'لقد قمت بإضافة سكن بالفعل، لا يمكنك إضافة أكثر من سكن واحد.',
+            ], 409);
+        }
+
         $data = $request->validated();
-        $data['user_id']      = $request->user()->id;
+        $data['user_id']      = $userId;
         $data['is_available'] = $request->boolean('is_available', true);
 
         $property = Property::create($data);
@@ -98,6 +108,38 @@ class PropertyController extends Controller
             'status'  => true,
             'message' => 'تم استرجاع تفاصيل السكن بنجاح',
             'data'    => $this->formatProperty($property),
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Property Owner: Get QR Code Data (own only)
+    |--------------------------------------------------------------------------
+    | GET /v1/properties/{property}/qr-data
+    */
+    public function qrData(Request $request, Property $property)
+    {
+        if ($request->user()->id !== $property->user_id) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'غير مصرح لك بعرض هذا السكن.',
+            ], 403);
+        }
+
+        $property->load('owner');
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع بيانات الـ QR كود بنجاح',
+            'data'    => [
+                'owner_id'        => $property->user_id,
+                'owner_name'      => $property->owner?->name,
+                'city'            => $property->city,
+                'floor'           => $property->floor,
+                'address_details' => $property->address_details,
+                'latitude'        => $property->latitude,
+                'longitude'       => $property->longitude,
+            ],
         ]);
     }
 

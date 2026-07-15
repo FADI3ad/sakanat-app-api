@@ -131,6 +131,104 @@ class PropertyTest extends TestCase
              ->assertJsonValidationErrors(['latitude', 'longitude', 'radius']);
      }
 
+     /**
+      * Test property_owner cannot create multiple properties.
+      */
+     public function test_property_owner_cannot_create_multiple_properties()
+     {
+         $owner = User::factory()->create([
+             'type' => UserTypeEnum::PROPERTY_OWNER,
+         ]);
+
+         Sanctum::actingAs($owner);
+
+         // First creation
+         Property::create([
+             'user_id' => $owner->id,
+             'title'   => 'العقار الأول',
+             'city'    => 'القاهرة',
+         ]);
+
+         // Second creation via api
+         $payload = [
+             'title'           => 'العقار الثاني',
+             'city'            => 'الجيزة',
+             'floor'           => '1',
+         ];
+
+         $response = $this->postJson('/api/v1/properties', $payload);
+
+         $response->assertStatus(409)
+             ->assertJson([
+                 'status'  => false,
+                 'message' => 'لقد قمت بإضافة سكن بالفعل، لا يمكنك إضافة أكثر من سكن واحد.',
+             ]);
+     }
+
+     /**
+      * Test property_owner can get QR data of own property.
+      */
+     public function test_property_owner_can_get_qr_data()
+     {
+         $owner = User::factory()->create([
+             'type' => UserTypeEnum::PROPERTY_OWNER,
+         ]);
+
+         Sanctum::actingAs($owner);
+
+         $property = Property::create([
+             'user_id'         => $owner->id,
+             'title'           => 'شقة المعادي',
+             'city'            => 'القاهرة',
+             'floor'           => '5',
+             'address_details' => 'شارع 9 المعادي',
+             'latitude'        => 29.9602,
+             'longitude'       => 31.2569,
+         ]);
+
+         $response = $this->getJson("/api/v1/properties/{$property->id}/qr-data");
+
+         $response->assertStatus(200)
+             ->assertJson([
+                 'status'  => true,
+                 'message' => 'تم استرجاع بيانات الـ QR كود بنجاح',
+                 'data'    => [
+                     'owner_id'        => $owner->id,
+                     'owner_name'      => $owner->name,
+                     'city'            => 'القاهرة',
+                     'floor'           => '5',
+                     'address_details' => 'شارع 9 المعادي',
+                     'latitude'        => 29.9602,
+                     'longitude'       => 31.2569,
+                 ]
+             ]);
+     }
+
+     /**
+      * Test property_owner cannot get QR data of other properties.
+      */
+     public function test_property_owner_cannot_get_qr_data_of_others()
+     {
+         $owner1 = User::factory()->create(['type' => UserTypeEnum::PROPERTY_OWNER]);
+         $owner2 = User::factory()->create(['type' => UserTypeEnum::PROPERTY_OWNER]);
+
+         $property = Property::create([
+             'user_id' => $owner2->id,
+             'title'   => 'سكن المالك الثاني',
+             'city'    => 'الجيزة',
+         ]);
+
+         Sanctum::actingAs($owner1);
+
+         $response = $this->getJson("/api/v1/properties/{$property->id}/qr-data");
+
+         $response->assertStatus(403)
+             ->assertJson([
+                 'status'  => false,
+                 'message' => 'غير مصرح لك بعرض هذا السكن.',
+             ]);
+     }
+
     /**
      * Test property_owner can list only their own properties.
      */

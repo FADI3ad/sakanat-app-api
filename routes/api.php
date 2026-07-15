@@ -92,6 +92,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/properties/my', [PropertyController::class, 'myProperties']);
             Route::post('/properties', [PropertyController::class, 'store']);
             Route::get('/properties/{property}', [PropertyController::class, 'show']);
+            Route::get('/properties/{property}/qr-data', [PropertyController::class, 'qrData']);
             Route::put('/properties/{property}', [PropertyController::class, 'update']);
             Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
         });
