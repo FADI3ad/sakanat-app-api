@@ -6,6 +6,7 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ServiceCommentController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -73,6 +74,16 @@ Route::prefix('v1')->group(function () {
          */
         Route::post('/services/{service}/comments', [ServiceCommentController::class, 'store']);
 
+        /*
+         * Messages Module
+         * - GET  /messages/chats        : Retrieve the list of active chat conversations
+         * - GET  /messages/user/{partner}: Retrieve message history with a partner user
+         * - POST /messages              : Send a new message
+         */
+        Route::get('/messages/chats', [MessageController::class, 'myConversations']);
+        Route::get('/messages/user/{partner}', [MessageController::class, 'chatHistory']);
+        Route::post('/messages', [MessageController::class, 'store']);
+
         // --- Provider-Only Routes ---
         Route::middleware(['provider'])->group(function () {
 
@@ -131,6 +142,14 @@ Route::prefix('v1')->group(function () {
             Route::get('/properties', [PropertyController::class, 'adminIndex']);
             Route::get('/properties/{property}', [PropertyController::class, 'adminShow']);
             Route::delete('/properties/{property}', [PropertyController::class, 'adminDestroy']);
+
+            /*
+             * Admin: Messages Management (Moderation)
+             * - GET    /admin/messages                    : List all messages
+             * - DELETE /admin/messages/{message}          : Delete any message
+             */
+            Route::get('/messages', [MessageController::class, 'adminIndex']);
+            Route::delete('/messages/{message}', [MessageController::class, 'adminDestroy']);
         });
     });
 });

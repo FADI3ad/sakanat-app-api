@@ -36,6 +36,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get all messages sent by this user.
+     */
+    public function sentMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    /**
+     * Get all messages received by this user.
+     */
+    public function receivedMessages(): HasMany
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    /**
      * Get all comments written by this user.
      */
     public function comments(): HasMany
