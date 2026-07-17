@@ -65,18 +65,8 @@ class PropertyController extends Controller
     */
     public function store(StorePropertyRequest $request)
     {
-        $userId = $request->user()->id;
-        $alreadyExists = Property::where('user_id', $userId)->exists();
-
-        if ($alreadyExists) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'لقد قمت بإضافة سكن بالفعل، لا يمكنك إضافة أكثر من سكن واحد.',
-            ], 409);
-        }
-
         $data = $request->validated();
-        $data['user_id']      = $userId;
+        $data['user_id']      = $request->user()->id;
         $data['is_available'] = $request->boolean('is_available', true);
 
         $property = Property::create($data);

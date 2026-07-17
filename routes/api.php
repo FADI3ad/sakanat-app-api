@@ -6,6 +6,8 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ServiceCommentController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\BedController;
 use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 
@@ -106,6 +108,34 @@ Route::prefix('v1')->group(function () {
             Route::get('/properties/{property}/qr-data', [PropertyController::class, 'qrData']);
             Route::put('/properties/{property}', [PropertyController::class, 'update']);
             Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
+
+            /*
+             * Rooms Module (nested under properties)
+             * - GET    /properties/{property}/rooms              : List all rooms
+             * - POST   /properties/{property}/rooms              : Add a new room
+             * - GET    /properties/{property}/rooms/{room}       : Show room with beds
+             * - PUT    /properties/{property}/rooms/{room}       : Update room details
+             * - DELETE /properties/{property}/rooms/{room}       : Delete room + its beds
+             */
+            Route::get('/properties/{property}/rooms', [RoomController::class, 'index']);
+            Route::post('/properties/{property}/rooms', [RoomController::class, 'store']);
+            Route::get('/properties/{property}/rooms/{room}', [RoomController::class, 'show']);
+            Route::put('/properties/{property}/rooms/{room}', [RoomController::class, 'update']);
+            Route::delete('/properties/{property}/rooms/{room}', [RoomController::class, 'destroy']);
+
+            /*
+             * Beds Module (nested under rooms)
+             * - GET    /rooms/{room}/beds           : List all beds in a room
+             * - POST   /rooms/{room}/beds           : Add a new bed
+             * - GET    /rooms/{room}/beds/{bed}     : Show a specific bed
+             * - PUT    /rooms/{room}/beds/{bed}     : Update bed occupant name
+             * - DELETE /rooms/{room}/beds/{bed}     : Delete a bed
+             */
+            Route::get('/rooms/{room}/beds', [BedController::class, 'index']);
+            Route::post('/rooms/{room}/beds', [BedController::class, 'store']);
+            Route::get('/rooms/{room}/beds/{bed}', [BedController::class, 'show']);
+            Route::put('/rooms/{room}/beds/{bed}', [BedController::class, 'update']);
+            Route::delete('/rooms/{room}/beds/{bed}', [BedController::class, 'destroy']);
         });
 
         // --- Admin-Only Routes ---
