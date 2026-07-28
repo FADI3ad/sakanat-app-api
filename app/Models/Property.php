@@ -19,6 +19,14 @@ class Property extends Model
     }
 
     /**
+     * Get all utility bills for this property.
+     */
+    public function utilityBills(): HasMany
+    {
+        return $this->hasMany(UtilityBill::class);
+    }
+
+    /**
      * Get all rooms inside this property.
      */
     public function rooms(): HasMany

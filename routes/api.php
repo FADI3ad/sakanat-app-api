@@ -9,6 +9,7 @@ use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BedController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\UtilityBillController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -136,6 +137,22 @@ Route::prefix('v1')->group(function () {
             Route::get('/rooms/{room}/beds/{bed}', [BedController::class, 'show']);
             Route::put('/rooms/{room}/beds/{bed}', [BedController::class, 'update']);
             Route::delete('/rooms/{room}/beds/{bed}', [BedController::class, 'destroy']);
+
+            /*
+             * Utility Bills Module (nested under properties)
+             * - GET    /properties/{property}/bills                    : List all bills (filter by month/type/is_paid)
+             * - POST   /properties/{property}/bills                    : Add a new bill
+             * - GET    /properties/{property}/bills/{bill}             : Show a specific bill
+             * - PUT    /properties/{property}/bills/{bill}             : Update bill details
+             * - PATCH  /properties/{property}/bills/{bill}/pay         : Mark bill as paid
+             * - DELETE /properties/{property}/bills/{bill}             : Delete a bill
+             */
+            Route::get('/properties/{property}/bills', [UtilityBillController::class, 'index']);
+            Route::post('/properties/{property}/bills', [UtilityBillController::class, 'store']);
+            Route::get('/properties/{property}/bills/{bill}', [UtilityBillController::class, 'show']);
+            Route::put('/properties/{property}/bills/{bill}', [UtilityBillController::class, 'update']);
+            Route::patch('/properties/{property}/bills/{bill}/pay', [UtilityBillController::class, 'markAsPaid']);
+            Route::delete('/properties/{property}/bills/{bill}', [UtilityBillController::class, 'destroy']);
         });
 
         // --- Admin-Only Routes ---
