@@ -26,10 +26,42 @@ class BedController extends Controller
                 'id'    => $bed->resident->id,
                 'name'  => $bed->resident->name,
                 'email' => $bed->resident->email,
+                'phone' => $bed->resident->phone,
             ] : null,
             'created_at'    => $bed->created_at,
             'updated_at'    => $bed->updated_at,
         ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helper: Resolve resident user by phone if provided in request
+    |--------------------------------------------------------------------------
+    */
+    private function resolveResidentData(array $data): array|\Illuminate\Http\JsonResponse
+    {
+        $phone = $data['student_phone'] ?? $data['phone'] ?? null;
+
+        if ($phone) {
+            $student = \App\Models\User::where('phone', $phone)
+                ->where('type', \App\Enums\UserTypeEnum::RESIDENT)
+                ->first();
+
+            if (! $student) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'لم يتم العثور على طالب مقيم بهاتف: ' . $phone,
+                ], 422);
+            }
+
+            $data['user_id'] = $student->id;
+            if (empty($data['occupant_name'])) {
+                $data['occupant_name'] = $student->name;
+            }
+        }
+
+        unset($data['student_phone'], $data['phone']);
+        return $data;
     }
 
     /*
@@ -85,7 +117,14 @@ class BedController extends Controller
             ], 403);
         }
 
-        $bed = $room->beds()->create($request->validated());
+        $data = $this->resolveResidentData($request->validated());
+
+        if ($data instanceof \Illuminate\Http\JsonResponse) {
+            return $data;
+        }
+
+        $bed = $room->beds()->create($data);
+        $bed->load('resident');
 
         return response()->json([
             'status'  => true,
@@ -102,7 +141,7 @@ class BedController extends Controller
     */
     public function show(Request $request, Room $room, Bed $bed)
     {
-        $room->load('property');
+        $room->load(['property', 'beds.resident']);
 
         if (! $this->authorizeRoomOwner($request, $room)) {
             return response()->json([
@@ -118,6 +157,8 @@ class BedController extends Controller
             ], 404);
         }
 
+        $bed->load('resident');
+
         return response()->json([
             'status'  => true,
             'message' => 'تم استرجاع تفاصيل السرير بنجاح',
@@ -127,7 +168,7 @@ class BedController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Update a bed's occupant name
+    | Update a bed's occupant name / resident
     |--------------------------------------------------------------------------
     | PUT /v1/rooms/{room}/beds/{bed}
     */
@@ -149,7 +190,14 @@ class BedController extends Controller
             ], 404);
         }
 
-        $bed->update($request->validated());
+        $data = $this->resolveResidentData($request->validated());
+
+        if ($data instanceof \Illuminate\Http\JsonResponse) {
+            return $data;
+        }
+
+        $bed->update($data);
+        $bed->load('resident');
 
         return response()->json([
             'status'  => true,

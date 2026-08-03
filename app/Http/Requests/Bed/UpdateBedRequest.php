@@ -15,6 +15,8 @@ class UpdateBedRequest extends FormRequest
     {
         return [
             'occupant_name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'student_phone' => ['sometimes', 'nullable', 'string'],
+            'phone'         => ['sometimes', 'nullable', 'string'],
             'user_id'       => ['sometimes', 'nullable', 'integer', 'exists:users,id'],
         ];
     }
@@ -24,6 +26,8 @@ class UpdateBedRequest extends FormRequest
         return [
             'occupant_name.string' => 'اسم الساكن يجب أن يكون نصاً.',
             'occupant_name.max'    => 'اسم الساكن لا يتجاوز 255 حرفاً.',
+            'student_phone.string' => 'رقم تليفون الطالب يجب أن يكون نصاً.',
+            'phone.string'         => 'رقم تليفون الطالب يجب أن يكون نصاً.',
             'user_id.exists'       => 'المستخدم المحدد غير موجود.',
         ];
     }
