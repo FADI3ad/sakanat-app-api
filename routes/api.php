@@ -10,6 +10,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\BedController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UtilityBillController;
+use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -101,6 +102,18 @@ Route::prefix('v1')->group(function () {
             Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
         });
 
+        // --- Resident-Only Routes ---
+        Route::middleware(['resident'])->group(function () {
+            /*
+             * Attendance Module (Resident)
+             * - POST /attendance/checkin : مسح QR وتسجيل الحضور
+             * - GET  /attendance/my      : عرض سجل الحضور الشخصي
+             */
+            Route::post('/attendance/checkin', [AttendanceController::class, 'checkin']);
+            Route::get('/attendance/my', [AttendanceController::class, 'myLogs']);
+        });
+
+
         // --- Property Owner Routes ---
         Route::middleware(['property_owner'])->group(function () {
             Route::get('/properties/my', [PropertyController::class, 'myProperties']);
@@ -153,7 +166,18 @@ Route::prefix('v1')->group(function () {
             Route::put('/properties/{property}/bills/{bill}', [UtilityBillController::class, 'update']);
             Route::patch('/properties/{property}/bills/{bill}/pay', [UtilityBillController::class, 'markAsPaid']);
             Route::delete('/properties/{property}/bills/{bill}', [UtilityBillController::class, 'destroy']);
+
+            /*
+             * Attendance Module (Property Owner)
+             * - GET   /properties/{property}/attendance          : سجل الحضور اليومي/الشهري
+             * - GET   /properties/{property}/attendance/summary  : ملخص إحصائي
+             * - PATCH /properties/{property}/curfew              : تحديد وقت الكيرفيو
+             */
+            Route::get('/properties/{property}/attendance', [AttendanceController::class, 'propertyLogs']);
+            Route::get('/properties/{property}/attendance/summary', [AttendanceController::class, 'summary']);
+            Route::patch('/properties/{property}/curfew', [AttendanceController::class, 'updateCurfew']);
         });
+
 
         // --- Admin-Only Routes ---
         Route::middleware(['admin'])->prefix('admin')->group(function () {

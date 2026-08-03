@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Guarded;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 #[Guarded(['id'])]
 class Property extends Model
@@ -35,6 +36,14 @@ class Property extends Model
     }
 
     /**
+     * Get all attendance logs for this property.
+     */
+    public function attendanceLogs(): HasMany
+    {
+        return $this->hasMany(AttendanceLog::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -46,6 +55,7 @@ class Property extends Model
             'latitude'     => 'float',
             'longitude'    => 'float',
             'radius'       => 'float',
+            'curfew_time'  => 'string',
         ];
     }
 }

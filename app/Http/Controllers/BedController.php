@@ -21,6 +21,12 @@ class BedController extends Controller
             'id'            => $bed->id,
             'room_id'       => $bed->room_id,
             'occupant_name' => $bed->occupant_name,
+            'user_id'       => $bed->user_id,
+            'resident'      => $bed->resident ? [
+                'id'    => $bed->resident->id,
+                'name'  => $bed->resident->name,
+                'email' => $bed->resident->email,
+            ] : null,
             'created_at'    => $bed->created_at,
             'updated_at'    => $bed->updated_at,
         ];
@@ -53,7 +59,7 @@ class BedController extends Controller
             ], 403);
         }
 
-        $beds = $room->beds()->orderBy('created_at')->get();
+        $beds = $room->beds()->with('resident')->orderBy('created_at')->get();
 
         return response()->json([
             'status'  => true,

@@ -67,6 +67,22 @@ class User extends Authenticatable
         return $this->hasMany(Property::class, 'user_id');
     }
 
+    /**
+     * Get the bed assigned to this resident.
+     */
+    public function bed(): HasOne
+    {
+        return $this->hasOne(Bed::class, 'user_id');
+    }
+
+    /**
+     * Get all attendance logs for this resident.
+     */
+    public function attendanceLogs(): HasMany
+    {
+        return $this->hasMany(AttendanceLog::class, 'user_id');
+    }
+
 
     protected function casts(): array
     {

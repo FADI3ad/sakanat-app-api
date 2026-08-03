@@ -22,7 +22,6 @@ class RoomController extends Controller
             'property_id' => $room->property_id,
             'name'        => $room->name,
             'description' => $room->description,
-            'beds_count'  => $room->beds()->count(),
             'created_at'  => $room->created_at,
             'updated_at'  => $room->updated_at,
         ];

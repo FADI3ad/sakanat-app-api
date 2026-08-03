@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'provider'       => \App\Http\Middleware\EnsureUserIsProvider::class,
             'admin'          => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'property_owner' => \App\Http\Middleware\EnsureUserIsPropertyOwner::class,
+            'resident'       => \App\Http\Middleware\EnsureUserIsResident::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
