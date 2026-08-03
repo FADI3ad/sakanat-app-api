@@ -105,10 +105,12 @@ Route::prefix('v1')->group(function () {
         // --- Resident-Only Routes ---
         Route::middleware(['resident'])->group(function () {
             /*
-             * Attendance Module (Resident)
-             * - POST /attendance/checkin : مسح QR وتسجيل الحضور
-             * - GET  /attendance/my      : عرض سجل الحضور الشخصي
+             * Residence & Attendance Module (Resident)
+             * - GET  /resident/my-residence : عرض بيانات السرير والغرفة والسكن الخاص بالطالب
+             * - POST /attendance/checkin     : مسح QR وتسجيل الحضور
+             * - GET  /attendance/my          : عرض سجل الحضور الشخصي
              */
+            Route::get('/resident/my-residence', [BedController::class, 'myResidence']);
             Route::post('/attendance/checkin', [AttendanceController::class, 'checkin']);
             Route::get('/attendance/my', [AttendanceController::class, 'myLogs']);
         });

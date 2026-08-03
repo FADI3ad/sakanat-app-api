@@ -237,4 +237,68 @@ class BedController extends Controller
             'message' => 'تم حذف السرير بنجاح',
         ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resident: Get my assigned bed, room, and property details
+    |--------------------------------------------------------------------------
+    | GET /v1/resident/my-residence
+    */
+    public function myResidence(Request $request)
+    {
+        $user = $request->user();
+
+        $bed = Bed::where('user_id', $user->id)
+            ->with(['room.property.owner'])
+            ->first();
+
+        if (! $bed) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'أنت غير مسجَّل في أي سرير حالياً.',
+                'data'    => null,
+            ], 404);
+        }
+
+        $room     = $bed->room;
+        $property = $room?->property;
+        $owner    = $property?->owner;
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع تفاصيل سكنك بنجاح',
+            'data'    => [
+                'bed' => [
+                    'id'            => $bed->id,
+                    'occupant_name' => $bed->occupant_name,
+                    'created_at'    => $bed->created_at,
+                    'updated_at'    => $bed->updated_at,
+                ],
+                'room' => $room ? [
+                    'id'          => $room->id,
+                    'name'        => $room->name,
+                    'description' => $room->description,
+                ] : null,
+                'property' => $property ? [
+                    'id'              => $property->id,
+                    'title'           => $property->title,
+                    'city'            => $property->city,
+                    'floor'           => $property->floor,
+                    'address_details' => $property->address_details,
+                    'latitude'        => $property->latitude,
+                    'longitude'       => $property->longitude,
+                    'radius'          => $property->radius,
+                    'curfew_time'     => $property->curfew_time,
+                    'is_available'    => (bool) $property->is_available,
+                    'description'     => $property->description,
+                    'owner'           => $owner ? [
+                        'id'    => $owner->id,
+                        'name'  => $owner->name,
+                        'email' => $owner->email,
+                        'phone' => $owner->phone,
+                    ] : null,
+                ] : null,
+            ],
+        ]);
+    }
 }
