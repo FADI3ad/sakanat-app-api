@@ -28,17 +28,33 @@ class AttendanceController extends Controller
         return [
             'id'                     => $log->id,
             'date'                   => $log->date?->toDateString(),
-            'status'                 => $log->status?->value,
+            'status'                 => $log->status?->value ?? $log->status,
             'checked_in_at'          => $log->checked_in_at,
+            'scanned_latitude'       => $log->scanned_latitude,
+            'scanned_longitude'      => $log->scanned_longitude,
             'distance_from_property' => $log->distance_from_property,
             'resident'               => $log->user ? [
-                'id'    => $log->user->id,
-                'name'  => $log->user->name,
-                'email' => $log->user->email,
+                'id'         => $log->user->id,
+                'name'       => $log->user->name,
+                'email'      => $log->user->email,
+                'phone'      => $log->user->phone,
+                'type'       => $log->user->type?->value ?? $log->user->type,
+                'is_blocked' => (bool) $log->user->is_blocked,
             ] : null,
             'bed' => $log->bed ? [
                 'id'            => $log->bed->id,
                 'occupant_name' => $log->bed->occupant_name,
+                'room'          => $log->bed->room ? [
+                    'id'          => $log->bed->room->id,
+                    'name'        => $log->bed->room->name,
+                    'description' => $log->bed->room->description,
+                ] : null,
+            ] : null,
+            'property' => $log->property ? [
+                'id'          => $log->property->id,
+                'title'       => $log->property->title,
+                'city'        => $log->property->city,
+                'curfew_time' => $log->property->curfew_time,
             ] : null,
         ];
     }
@@ -92,7 +108,11 @@ class AttendanceController extends Controller
         $user = $request->user();
 
         $query = AttendanceLog::where('user_id', $user->id)
-            ->with(['bed', 'property:id,title,city'])
+            ->with([
+                'user:id,name,email,phone,type,is_blocked',
+                'bed.room:id,property_id,name,description',
+                'property:id,title,city,curfew_time'
+            ])
             ->orderByDesc('date');
 
         // فلتر بالشهر (اختياري)
@@ -128,8 +148,8 @@ class AttendanceController extends Controller
     */
     public function propertyLogs(Request $request, Property $property)
     {
-        // التحقق إن صاحب السكن هو المالك
-        if ($request->user()->id !== $property->user_id) {
+        // التحقق إن صاحب السكن هو المالك أو أن المستخدم أدمن
+        if ($request->user()->id !== $property->user_id && $request->user()->type !== UserTypeEnum::ADMIN) {
             return response()->json([
                 'status'  => false,
                 'message' => 'غير مصرح لك بعرض سجل هذا السكن.',
@@ -137,7 +157,11 @@ class AttendanceController extends Controller
         }
 
         $query = AttendanceLog::where('property_id', $property->id)
-            ->with(['user:id,name,email', 'bed:id,occupant_name,room_id'])
+            ->with([
+                'user:id,name,email,phone,type,is_blocked',
+                'bed.room:id,property_id,name,description',
+                'property:id,title,city,curfew_time'
+            ])
             ->orderByDesc('date')
             ->orderBy('status');
 
@@ -173,13 +197,143 @@ class AttendanceController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | Property Owner / Admin: سجل الحضور اليومي لسكن محدد
+    |--------------------------------------------------------------------------
+    | GET /v1/properties/{property}/attendance/daily?date=2026-08-04
+    */
+    public function dailyLogs(Request $request, Property $property)
+    {
+        if ($request->user()->id !== $property->user_id && $request->user()->type !== UserTypeEnum::ADMIN) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'غير مصرح لك بعرض سجل هذا السكن.',
+            ], 403);
+        }
+
+        $date = $request->get('date', Carbon::today()->toDateString());
+
+        $query = AttendanceLog::where('property_id', $property->id)
+            ->whereDate('date', $date)
+            ->with([
+                'user:id,name,email,phone,type,is_blocked',
+                'bed.room:id,property_id,name,description',
+                'property:id,title,city,curfew_time'
+            ])
+            ->orderBy('status');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $logs = $query->paginate($request->integer('per_page', 30));
+
+        // حساب ملخص اليوم المحدد
+        $statsQuery = AttendanceLog::where('property_id', $property->id)->whereDate('date', $date);
+        $total   = $statsQuery->clone()->count();
+        $present = $statsQuery->clone()->where('status', AttendanceStatusEnum::PRESENT)->count();
+        $late    = $statsQuery->clone()->where('status', AttendanceStatusEnum::LATE)->count();
+        $absent  = $statsQuery->clone()->where('status', AttendanceStatusEnum::ABSENT)->count();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع سجل الحضور اليومي بنجاح',
+            'date'    => $date,
+            'summary' => [
+                'total_residents' => $total,
+                'present_count'   => $present,
+                'late_count'      => $late,
+                'absent_count'    => $absent,
+            ],
+            'data'    => $logs->map(fn($log) => $this->formatLog($log)),
+            'meta'    => [
+                'total'        => $logs->total(),
+                'per_page'     => $logs->perPage(),
+                'current_page' => $logs->currentPage(),
+                'last_page'    => $logs->lastPage(),
+            ],
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Property Owner / Admin: سجل الحضور الشهري لسكن محدد
+    |--------------------------------------------------------------------------
+    | GET /v1/properties/{property}/attendance/monthly?month=2026-08
+    */
+    public function monthlyLogs(Request $request, Property $property)
+    {
+        if ($request->user()->id !== $property->user_id && $request->user()->type !== UserTypeEnum::ADMIN) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'غير مصرح لك بعرض سجل هذا السكن.',
+            ], 403);
+        }
+
+        $month = $request->get('month', Carbon::now()->format('Y-m'));
+        $year  = (int) substr($month, 0, 4);
+        $mon   = (int) substr($month, 5, 2);
+
+        $query = AttendanceLog::where('property_id', $property->id)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $mon)
+            ->with([
+                'user:id,name,email,phone,type,is_blocked',
+                'bed.room:id,property_id,name,description',
+                'property:id,title,city,curfew_time'
+            ])
+            ->orderByDesc('date')
+            ->orderBy('status');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        $logs = $query->paginate($request->integer('per_page', 30));
+
+        // إحصائيات الشهر المحدد
+        $statsQuery = AttendanceLog::where('property_id', $property->id)
+            ->whereYear('date', $year)
+            ->whereMonth('date', $mon);
+        
+        $total   = $statsQuery->clone()->count();
+        $present = $statsQuery->clone()->where('status', AttendanceStatusEnum::PRESENT)->count();
+        $late    = $statsQuery->clone()->where('status', AttendanceStatusEnum::LATE)->count();
+        $absent  = $statsQuery->clone()->where('status', AttendanceStatusEnum::ABSENT)->count();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع سجل الحضور الشهري بنجاح',
+            'month'   => $month,
+            'summary' => [
+                'total_records'   => $total,
+                'present_count'   => $present,
+                'late_count'      => $late,
+                'absent_count'    => $absent,
+                'attendance_rate' => $total > 0 ? round((($present + $late) / $total) * 100, 1) : 0,
+            ],
+            'data'    => $logs->map(fn($log) => $this->formatLog($log)),
+            'meta'    => [
+                'total'        => $logs->total(),
+                'per_page'     => $logs->perPage(),
+                'current_page' => $logs->currentPage(),
+                'last_page'    => $logs->lastPage(),
+            ],
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Property Owner: ملخص إحصائي للحضور
     |--------------------------------------------------------------------------
     | GET /v1/properties/{property}/attendance/summary?month=2026-08
     */
     public function summary(Request $request, Property $property)
     {
-        if ($request->user()->id !== $property->user_id) {
+        if ($request->user()->id !== $property->user_id && $request->user()->type !== UserTypeEnum::ADMIN) {
             return response()->json([
                 'status'  => false,
                 'message' => 'غير مصرح لك بعرض ملخص هذا السكن.',
@@ -204,7 +358,7 @@ class AttendanceController extends Controller
             ->whereYear('date', $year)
             ->whereMonth('date', $mon)
             ->where('status', AttendanceStatusEnum::ABSENT)
-            ->with('user:id,name,email')
+            ->with('user:id,name,email,phone')
             ->selectRaw('user_id, COUNT(*) as absent_count')
             ->groupBy('user_id')
             ->orderByDesc('absent_count')
@@ -215,6 +369,7 @@ class AttendanceController extends Controller
                     'id'    => $row->user->id,
                     'name'  => $row->user->name,
                     'email' => $row->user->email,
+                    'phone' => $row->user->phone,
                 ] : null,
                 'absent_count' => $row->absent_count,
             ]);
@@ -243,7 +398,7 @@ class AttendanceController extends Controller
     */
     public function updateCurfew(UpdateCurfewRequest $request, Property $property)
     {
-        if ($request->user()->id !== $property->user_id) {
+        if ($request->user()->id !== $property->user_id && $request->user()->type !== UserTypeEnum::ADMIN) {
             return response()->json([
                 'status'  => false,
                 'message' => 'غير مصرح لك بتعديل هذا السكن.',

@@ -85,13 +85,40 @@ class AttendanceService
             ];
         }
 
-        // --- 5. تحديد الحالة (present أو late) ---
-        $status = AttendanceStatusEnum::PRESENT;
+        // --- 5. تحديد الحالة وحساب التأخير والتبكير ---
+        $status      = AttendanceStatusEnum::PRESENT;
+        $isLate      = false;
+        $isEarly     = false;
+        $minutesDiff = 0;
+        $timeRemark  = 'on_time';
+        $message     = 'تم تسجيل حضورك بنجاح.';
 
         if ($property->curfew_time) {
+            $now    = Carbon::now();
             $curfew = Carbon::today()->setTimeFromTimeString($property->curfew_time);
-            if (Carbon::now()->greaterThan($curfew)) {
-                $status = AttendanceStatusEnum::LATE;
+
+            if ($now->greaterThan($curfew)) {
+                $minutesDiff = (int) $curfew->diffInMinutes($now);
+                if ($minutesDiff >= 30) {
+                    $status     = AttendanceStatusEnum::LATE;
+                    $isLate     = true;
+                    $timeRemark = 'late';
+                    $message    = "تم تسجيل حضورك بنجاح. تنبيه: هذا تأخير لأنك متأخر بمقدار {$minutesDiff} دقيقة عن وقت الحظر المحدد.";
+                } else {
+                    $status     = AttendanceStatusEnum::PRESENT;
+                    $timeRemark = 'on_time';
+                    $message    = "تم تسجيل حضورك بنجاح. أنت متأخر بـ {$minutesDiff} دقيقة (ضمن فترة السماح 30 دقيقة).";
+                }
+            } else {
+                $minutesDiff = (int) $now->diffInMinutes($curfew);
+                $status      = AttendanceStatusEnum::PRESENT;
+                if ($minutesDiff > 0) {
+                    $isEarly    = true;
+                    $timeRemark = 'early';
+                    $message    = "تم تسجيل حضورك بنجاح! أنت جاي بدري قبل وقت الحظر بـ {$minutesDiff} دقيقة.";
+                } else {
+                    $message    = "تم تسجيل حضورك بنجاح في الموعد المحدد بالضبط.";
+                }
             }
         }
 
@@ -112,13 +139,15 @@ class AttendanceService
             ]
         );
 
-        $label = $status === AttendanceStatusEnum::LATE ? 'متأخر' : 'حاضر';
-
         return [
             'success' => true,
-            'message' => "تم تسجيل حضورك بنجاح كـ {$label}",
+            'message' => $message,
             'data'    => [
                 'status'                 => $status->value,
+                'is_late'                => $isLate,
+                'is_early'               => $isEarly,
+                'minutes_difference'     => $minutesDiff,
+                'time_remark'            => $timeRemark,
                 'checked_in_at'          => $log->checked_in_at,
                 'distance_from_property' => $distance,
                 'allowed_radius'         => $allowedRadius,

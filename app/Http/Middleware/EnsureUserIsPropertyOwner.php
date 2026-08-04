@@ -16,7 +16,7 @@ class EnsureUserIsPropertyOwner
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->type !== UserTypeEnum::PROPERTY_OWNER) {
+        if (!$request->user() || !in_array($request->user()->type, [UserTypeEnum::PROPERTY_OWNER, UserTypeEnum::ADMIN])) {
             return response()->json([
                 'status'  => false,
                 'message' => 'غير مصرح لك بالوصول، يجب أن تكون مالك عقار.',

@@ -170,12 +170,16 @@ Route::prefix('v1')->group(function () {
             Route::delete('/properties/{property}/bills/{bill}', [UtilityBillController::class, 'destroy']);
 
             /*
-             * Attendance Module (Property Owner)
-             * - GET   /properties/{property}/attendance          : سجل الحضور اليومي/الشهري
+             * Attendance Module (Property Owner / Admin)
+             * - GET   /properties/{property}/attendance          : سجل الحضور العام
+             * - GET   /properties/{property}/attendance/daily    : سجل الحضور اليومي
+             * - GET   /properties/{property}/attendance/monthly  : سجل الحضور الشهري
              * - GET   /properties/{property}/attendance/summary  : ملخص إحصائي
              * - PATCH /properties/{property}/curfew              : تحديد وقت الكيرفيو
              */
             Route::get('/properties/{property}/attendance', [AttendanceController::class, 'propertyLogs']);
+            Route::get('/properties/{property}/attendance/daily', [AttendanceController::class, 'dailyLogs']);
+            Route::get('/properties/{property}/attendance/monthly', [AttendanceController::class, 'monthlyLogs']);
             Route::get('/properties/{property}/attendance/summary', [AttendanceController::class, 'summary']);
             Route::patch('/properties/{property}/curfew', [AttendanceController::class, 'updateCurfew']);
         });
