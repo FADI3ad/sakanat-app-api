@@ -11,6 +11,8 @@ use App\Http\Controllers\BedController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UtilityBillController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\DeliveryServiceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -32,6 +34,16 @@ Route::prefix('v1/auth')->group(function () {
 Route::prefix('v1')->group(function () {
 
     /*
+     * Areas Endpoints (CRUD)
+     * - GET /areas          : List all areas (Public)
+     * - GET /areas/{area}   : Show a specific area (Public)
+     * - GET /areas/{area}/services : List services in an area (Public)
+     */
+    Route::get('/areas', [AreaController::class, 'index']);
+    Route::get('/areas/{area}', [AreaController::class, 'show']);
+    Route::get('/areas/{area}/services', [AreaController::class, 'services']);
+
+    /*
      * Types Endpoints (CRUD)
      * - GET /types        : List all service types (Public)
      * - GET /types/{type} : Show a specific service type (Public)
@@ -42,6 +54,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/types', [TypeController::class, 'index']);
     Route::get('/types/{type}', [TypeController::class, 'show']);
     Route::get('/types/{type}/services', [TypeController::class, 'services']);
+    Route::get('/types/{type}/delivery-services', [DeliveryServiceController::class, 'byType']);
 
     /*
      * Services Endpoints (CRUD)
@@ -53,6 +66,18 @@ Route::prefix('v1')->group(function () {
      */
     Route::get('/services', [ServiceController::class, 'index']);
     Route::get('/services/{service}', [ServiceController::class, 'show']);
+    Route::get('/users/{user}/services', [ServiceController::class, 'byUser']);
+
+    /*
+     * Delivery Services Endpoints (CRUD)
+     * - GET /delivery-services                   : List all delivery services (Public)
+     * - GET /delivery-services/{deliveryService} : Show a delivery service (Public)
+     * - POST /delivery-services                  : Create a delivery service (Protected, Provider Only)
+     * - PUT /delivery-services/{deliveryService} : Update a delivery service (Protected, Provider Only)
+     * - DELETE /delivery-services/{deliveryService} : Delete a delivery service (Protected, Provider Only)
+     */
+    Route::get('/delivery-services', [DeliveryServiceController::class, 'index']);
+    Route::get('/delivery-services/{deliveryService}', [DeliveryServiceController::class, 'show']);
 
     /*
      * Comments on Services (Public read, Auth required to post)
@@ -91,6 +116,11 @@ Route::prefix('v1')->group(function () {
         // --- Provider-Only Routes ---
         Route::middleware(['provider'])->group(function () {
 
+            // Area Mutator Operations
+            Route::post('/areas', [AreaController::class, 'store']);
+            Route::put('/areas/{area}', [AreaController::class, 'update']);
+            Route::delete('/areas/{area}', [AreaController::class, 'destroy']);
+
             // Type Mutator Operations
             Route::post('/types', [TypeController::class, 'store']);
             Route::put('/types/{type}', [TypeController::class, 'update']);
@@ -100,6 +130,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/services', [ServiceController::class, 'store']);
             Route::put('/services/{service}', [ServiceController::class, 'update']);
             Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+
+            // Delivery Service Mutator Operations
+            Route::post('/delivery-services', [DeliveryServiceController::class, 'store']);
+            Route::put('/delivery-services/{deliveryService}', [DeliveryServiceController::class, 'update']);
+            Route::delete('/delivery-services/{deliveryService}', [DeliveryServiceController::class, 'destroy']);
         });
 
         // --- Resident-Only Routes ---
@@ -227,6 +262,15 @@ Route::prefix('v1')->group(function () {
              */
             Route::get('/messages', [MessageController::class, 'adminIndex']);
             Route::delete('/messages/{message}', [MessageController::class, 'adminDestroy']);
+            /*
+             * Admin: Areas Management
+             * - POST   /admin/areas          : Add area
+             * - PUT    /admin/areas/{area}   : Update area
+             * - DELETE /admin/areas/{area}   : Delete area
+             */
+            Route::post('/areas', [AreaController::class, 'store']);
+            Route::put('/areas/{area}', [AreaController::class, 'update']);
+            Route::delete('/areas/{area}', [AreaController::class, 'destroy']);
         });
     });
 });

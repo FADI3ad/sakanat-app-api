@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use App\Models\Provider;
+use App\Models\User;
 use App\Http\Requests\Service\StoreServiceRequest;
 use App\Http\Requests\Service\UpdateServiceRequest;
 use Illuminate\Http\Request;
@@ -53,18 +54,16 @@ class ServiceController extends Controller
     public function store(StoreServiceRequest $request)
     {
         $user = $request->user();
-        $provider = $user->provider ?: Provider::create(['user_id' => $user->id]);
+        $provider = Provider::firstOrCreate(['user_id' => $user->id]);
 
-        // Check: provider cannot have two services of the same type
-        $alreadyExists = Service::where('provider_id', $provider->id)
-            ->where('type_id', $request->type_id)
-            ->exists();
+        // Check: provider can only have services of a single type
+        $existingType = Service::where('provider_id', $provider->id)->value('type_id');
 
-        if ($alreadyExists) {
+        if ($existingType && (int) $existingType !== (int) $request->type_id) {
             return response()->json([
                 'status'  => false,
-                'message' => 'لديك خدمة مسجلة بهذا النوع بالفعل، لا يمكن إضافة أكثر من خدمة بنفس النوع.',
-            ], 409);
+                'message' => 'لا يمكنك إضافة خدمة بنوع مختلف، جميع خدماتك يجب أن تكون من نفس النوع (تخصص واحد فقط).',
+            ], 422);
         }
 
         $data = $request->validated();
@@ -165,6 +164,19 @@ class ServiceController extends Controller
             ], 403);
         }
 
+        if ($request->has('type_id') && (int) $request->type_id !== (int) $service->type_id) {
+            $hasOtherServices = Service::where('provider_id', $provider->id)
+                ->where('id', '!=', $service->id)
+                ->exists();
+
+            if ($hasOtherServices) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'لا يمكنك تغيير نوع الخدمة لأن لديك خدمات أخرى مسجلة بنفس النوع الحالي.',
+                ], 422);
+            }
+        }
+
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
@@ -233,6 +245,64 @@ class ServiceController extends Controller
         return response()->json([
             'status'  => true,
             'message' => 'تم حذف الخدمة بنجاح',
+        ]);
+    }
+
+    /**
+     * Display a listing of services belonging to a specific user.
+     */
+    public function byUser(User $user, Request $request)
+    {
+        $provider = $user->provider;
+
+        if (!$provider) {
+            return response()->json([
+                'status'  => true,
+                'message' => 'تم استرجاع خدمات المستخدم بنجاح',
+                'user'    => [
+                    'id'    => $user->id,
+                    'name'  => $user->name,
+                    'phone' => $user->phone,
+                ],
+                'data'    => [],
+                'meta'    => [
+                    'total'        => 0,
+                    'per_page'     => $request->integer('per_page', 15),
+                    'current_page' => 1,
+                    'last_page'    => 1,
+                ],
+            ]);
+        }
+
+        $services = Service::where('provider_id', $provider->id)
+            ->with(['area', 'type'])
+            ->paginate($request->integer('per_page', 15));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع خدمات المستخدم بنجاح',
+            'user'    => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'phone' => $user->phone,
+            ],
+            'data'    => $services->map(fn($service) => [
+                'id'                 => $service->id,
+                'title'              => $service->title,
+                'description'        => $service->description,
+                'image'              => $service->image ? asset('storage/' . $service->image) : null,
+                'is_available'       => (bool) $service->is_available,
+                'delivery_available' => (bool) $service->delevery_available,
+                'price'              => $service->price,
+                'area'               => $service->area?->name,
+                'type'               => $service->type?->name,
+            ]),
+            'meta' => [
+                'total'        => $services->total(),
+                'per_page'     => $services->perPage(),
+                'current_page' => $services->currentPage(),
+                'last_page'    => $services->lastPage(),
+            ],
         ]);
     }
 }

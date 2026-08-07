@@ -16,4 +16,12 @@ class Type extends Model
     {
         return $this->hasMany(Service::class);
     }
+
+    /**
+     * Get the delivery services associated with this type.
+     */
+    public function deliveryServices(): HasMany
+    {
+        return $this->hasMany(DeliveryService::class);
+    }
 }

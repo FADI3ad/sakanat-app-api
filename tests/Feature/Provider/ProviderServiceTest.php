@@ -250,4 +250,145 @@ class ProviderServiceTest extends TestCase
                 'message' => 'غير مصرح لك بتعديل هذه الخدمة.',
             ]);
     }
+
+    /**
+     * Test provider can add multiple services of the same type.
+     */
+    public function test_provider_can_add_multiple_services_of_same_type()
+    {
+        $user = User::create([
+            'name'     => 'Food Provider',
+            'email'    => 'foodprovider@test.com',
+            'phone'    => '01000000088',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::PROVIDER->value,
+        ]);
+
+        $area = Area::first();
+        $type = Type::first();
+
+        Sanctum::actingAs($user);
+
+        // Add first service
+        $res1 = $this->postJson('/api/v1/services', [
+            'title'              => 'الوجبة الأولى',
+            'description'        => 'وجبة مشويات',
+            'delevery_available' => true,
+            'is_available'       => true,
+            'price'              => 100.00,
+            'area_id'            => $area->id,
+            'type_id'            => $type->id,
+        ]);
+        $res1->assertStatus(201);
+
+        // Add second service of the SAME type
+        $res2 = $this->postJson('/api/v1/services', [
+            'title'              => 'الوجبة الثانية',
+            'description'        => 'وجبة أسماك',
+            'delevery_available' => true,
+            'is_available'       => true,
+            'price'              => 150.00,
+            'area_id'            => $area->id,
+            'type_id'            => $type->id,
+        ]);
+        $res2->assertStatus(201);
+
+        $this->assertDatabaseCount('services', 2);
+    }
+
+    /**
+     * Test provider cannot add service of a different type.
+     */
+    public function test_provider_cannot_add_service_of_different_type()
+    {
+        $types = Type::take(2)->get();
+        if ($types->count() < 2) {
+            $type2 = Type::create([
+                'name'        => 'نوع ثاني',
+                'description' => 'وصف النوع الثاني',
+                'status'      => true,
+            ]);
+            $types = Type::all();
+        }
+
+        $type1 = $types[0];
+        $type2 = $types[1];
+
+        $user = User::create([
+            'name'     => 'Single Type Provider',
+            'email'    => 'singletype@test.com',
+            'phone'    => '01000000077',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::PROVIDER->value,
+        ]);
+
+        $area = Area::first();
+
+        Sanctum::actingAs($user);
+
+        // Add first service under type 1
+        $this->postJson('/api/v1/services', [
+            'title'              => 'خدمة النوع الأول',
+            'delevery_available' => true,
+            'price'              => 50.00,
+            'area_id'            => $area->id,
+            'type_id'            => $type1->id,
+        ])->assertStatus(201);
+
+        // Attempt to add service under type 2 (different type) -> Should fail
+        $response = $this->postJson('/api/v1/services', [
+            'title'              => 'خدمة النوع الثاني المحظورة',
+            'delevery_available' => true,
+            'price'              => 80.00,
+            'area_id'            => $area->id,
+            'type_id'            => $type2->id,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'status'  => false,
+                'message' => 'لا يمكنك إضافة خدمة بنوع مختلف، جميع خدماتك يجب أن تكون من نفس النوع (تخصص واحد فقط).',
+            ]);
+    }
+
+    /**
+     * Test getting services belonging to a specific user.
+     */
+    public function test_can_get_services_by_user_id()
+    {
+        $user = User::create([
+            'name'     => 'Provider User Services',
+            'email'    => 'user_services@test.com',
+            'phone'    => '01000000066',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::PROVIDER->value,
+        ]);
+
+        $provider = Provider::create(['user_id' => $user->id]);
+        $area = Area::first();
+        $type = Type::first();
+
+        Service::create([
+            'title'              => 'خدمة المستخدم 1',
+            'price'              => 30.00,
+            'delevery_available' => true,
+            'is_available'       => true,
+            'provider_id'        => $provider->id,
+            'area_id'            => $area->id,
+            'type_id'            => $type->id,
+        ]);
+
+        $response = $this->getJson("/api/v1/users/{$user->id}/services");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status'  => true,
+                'message' => 'تم استرجاع خدمات المستخدم بنجاح',
+                'user'    => [
+                    'id'   => $user->id,
+                    'name' => 'Provider User Services',
+                ],
+            ])
+            ->assertJsonCount(1, 'data');
+    }
 }
