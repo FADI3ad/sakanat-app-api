@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Service;
 use App\Models\Provider;
 use App\Models\User;
+use App\Enums\UserTypeEnum;
 use App\Http\Requests\Service\StoreServiceRequest;
 use App\Http\Requests\Service\UpdateServiceRequest;
 use Illuminate\Http\Request;
@@ -253,25 +254,20 @@ class ServiceController extends Controller
      */
     public function byUser(User $user, Request $request)
     {
+        if ($user->type !== UserTypeEnum::PROVIDER) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'المستخدم ليس مقدم خدمة.',
+            ], 400);
+        }
+
         $provider = $user->provider;
 
-        if (!$provider) {
+        if (!$provider || !$provider->services()->exists()) {
             return response()->json([
-                'status'  => true,
-                'message' => 'تم استرجاع خدمات المستخدم بنجاح',
-                'user'    => [
-                    'id'    => $user->id,
-                    'name'  => $user->name,
-                    'phone' => $user->phone,
-                ],
-                'data'    => [],
-                'meta'    => [
-                    'total'        => 0,
-                    'per_page'     => $request->integer('per_page', 15),
-                    'current_page' => 1,
-                    'last_page'    => 1,
-                ],
-            ]);
+                'status'  => false,
+                'message' => 'لا توجد خدمات لهذا المستخدم.',
+            ], 400);
         }
 
         $services = Service::where('provider_id', $provider->id)

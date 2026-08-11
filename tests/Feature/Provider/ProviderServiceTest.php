@@ -391,4 +391,50 @@ class ProviderServiceTest extends TestCase
             ])
             ->assertJsonCount(1, 'data');
     }
+
+    /**
+     * Test getting services for a non-provider user returns 400.
+     */
+    public function test_get_services_by_user_id_fails_for_non_provider()
+    {
+        $user = User::create([
+            'name'     => 'Resident User Services',
+            'email'    => 'resident_services@test.com',
+            'phone'    => '01000000055',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::RESIDENT->value,
+        ]);
+
+        $response = $this->getJson("/api/v1/users/{$user->id}/services");
+
+        $response->assertStatus(400)
+            ->assertJson([
+                'status'  => false,
+                'message' => 'المستخدم ليس مقدم خدمة.',
+            ]);
+    }
+
+    /**
+     * Test getting services for a provider with no services returns 400.
+     */
+    public function test_get_services_by_user_id_fails_for_provider_without_services()
+    {
+        $user = User::create([
+            'name'     => 'Provider Without Services',
+            'email'    => 'no_services@test.com',
+            'phone'    => '01000000044',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::PROVIDER->value,
+        ]);
+
+        Provider::create(['user_id' => $user->id]);
+
+        $response = $this->getJson("/api/v1/users/{$user->id}/services");
+
+        $response->assertStatus(400)
+            ->assertJson([
+                'status'  => false,
+                'message' => 'لا توجد خدمات لهذا المستخدم.',
+            ]);
+    }
 }

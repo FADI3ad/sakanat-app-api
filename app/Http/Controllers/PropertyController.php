@@ -276,4 +276,54 @@ class PropertyController extends Controller
             'message' => 'تم حذف السكن بنجاح',
         ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Property Owner: List all residents (students) living in this property
+    |--------------------------------------------------------------------------
+    | GET /v1/properties/{property}/residents
+    */
+    public function residents(Request $request, Property $property)
+    {
+        // Authorize: only owner or admin can view property residents
+        if ($request->user()->id !== $property->user_id && $request->user()->type !== \App\Enums\UserTypeEnum::ADMIN) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'غير مصرح لك بعرض طلاب هذا السكن.',
+            ], 403);
+        }
+
+        $residents = \App\Models\User::where('type', \App\Enums\UserTypeEnum::RESIDENT)
+            ->whereHas('bed.room', function ($query) use ($property) {
+                $query->where('property_id', $property->id);
+            })
+            ->with(['bed.room'])
+            ->orderBy('name')
+            ->paginate($request->integer('per_page', 15));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع قائمة الطلاب المقيمين بنجاح',
+            'data'    => $residents->map(fn($student) => [
+                'id'    => $student->id,
+                'name'  => $student->name,
+                'email' => $student->email,
+                'phone' => $student->phone,
+                'room'  => $student->bed?->room ? [
+                    'id'   => $student->bed->room->id,
+                    'name' => $student->bed->room->name,
+                ] : null,
+                'bed'   => $student->bed ? [
+                    'id'            => $student->bed->id,
+                    'occupant_name' => $student->bed->occupant_name,
+                ] : null,
+            ]),
+            'meta'    => [
+                'total'        => $residents->total(),
+                'per_page'     => $residents->perPage(),
+                'current_page' => $residents->currentPage(),
+                'last_page'    => $residents->lastPage(),
+            ],
+        ]);
+    }
 }

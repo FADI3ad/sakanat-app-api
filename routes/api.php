@@ -157,6 +157,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/properties', [PropertyController::class, 'store']);
             Route::get('/properties/{property}', [PropertyController::class, 'show']);
             Route::get('/properties/{property}/qr-data', [PropertyController::class, 'qrData']);
+            Route::get('/properties/{property}/residents', [PropertyController::class, 'residents']);
             Route::put('/properties/{property}', [PropertyController::class, 'update']);
             Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
 
