@@ -13,6 +13,7 @@ use App\Http\Controllers\UtilityBillController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\DeliveryServiceController;
+use App\Http\Controllers\AbsenceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -66,6 +67,7 @@ Route::prefix('v1')->group(function () {
      */
     Route::get('/services', [ServiceController::class, 'index']);
     Route::get('/services/{service}', [ServiceController::class, 'show']);
+    Route::get('/services/{service}/owner', [ServiceController::class, 'ownerDetails']);
     Route::get('/users/{user}/services', [ServiceController::class, 'byUser']);
 
     /*
@@ -148,6 +150,17 @@ Route::prefix('v1')->group(function () {
             Route::get('/resident/my-residence', [BedController::class, 'myResidence']);
             Route::post('/attendance/checkin', [AttendanceController::class, 'checkin']);
             Route::get('/attendance/my', [AttendanceController::class, 'myLogs']);
+
+            /*
+             * Absence / Travel Module (Resident)
+             * - POST /resident/absences : تسجيل بلاغ غياب أو سفر
+             * - GET  /resident/absences : عرض بلاغات الغياب الخاصة بالطالب
+             *   Optional query params:
+             *     - active=1    : عرض البلاغات النشطة حالياً فقط
+             *     - per_page=N  : عدد النتائج في الصفحة
+             */
+            Route::post('/resident/absences', [AbsenceController::class, 'store']);
+            Route::get('/resident/absences', [AbsenceController::class, 'myAbsences']);
         });
 
 
@@ -160,6 +173,16 @@ Route::prefix('v1')->group(function () {
             Route::get('/properties/{property}/residents', [PropertyController::class, 'residents']);
             Route::put('/properties/{property}', [PropertyController::class, 'update']);
             Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
+
+            /*
+             * Absence / Travel Module (Property Owner)
+             * - GET /properties/absences : عرض كل بلاغات الغياب في جميع السكنات التابعة للمالك
+             *   Optional query params:
+             *     - property_id=X : تصفية على سكن بعينه
+             *     - active=1      : البلاغات النشطة حالياً فقط
+             *     - per_page=N    : عدد النتائج في الصفحة
+             */
+            Route::get('/properties/absences', [AbsenceController::class, 'ownerAbsences']);
 
             /*
              * Rooms Module (nested under properties)

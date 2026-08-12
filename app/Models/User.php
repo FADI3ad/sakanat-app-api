@@ -83,6 +83,13 @@ class User extends Authenticatable
         return $this->hasMany(AttendanceLog::class, 'user_id');
     }
 
+    /**
+     * Get all absence/travel reports for this resident.
+     */
+    public function absences(): HasMany
+    {
+        return $this->hasMany(Absence::class);
+    }
 
     protected function casts(): array
     {

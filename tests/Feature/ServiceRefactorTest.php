@@ -186,4 +186,68 @@ class ServiceRefactorTest extends TestCase
             $this->assertContains($item['id'], $typeServiceIds);
         }
     }
+
+    /**
+     * Test getting service owner details and other services.
+     */
+    public function test_can_get_service_owner_details_and_other_services()
+    {
+        // 1. Create a Provider with user
+        $user = \App\Models\User::factory()->create([
+            'type' => \App\Enums\UserTypeEnum::PROVIDER,
+        ]);
+        $provider = \App\Models\Provider::create([
+            'user_id' => $user->id,
+        ]);
+
+        // 2. Query seeded Area and Type
+        $area = \App\Models\Area::first();
+        $type = \App\Models\Type::first();
+
+        // 3. Create two services for this provider
+        $service1 = Service::create([
+            'title' => 'Service 1',
+            'description' => 'Description 1',
+            'price' => 100,
+            'is_available' => true,
+            'delevery_available' => false,
+            'area_id' => $area->id,
+            'type_id' => $type->id,
+            'provider_id' => $provider->id,
+        ]);
+
+        $service2 = Service::create([
+            'title' => 'Service 2',
+            'description' => 'Description 2',
+            'price' => 150,
+            'is_available' => true,
+            'delevery_available' => true,
+            'area_id' => $area->id,
+            'type_id' => $type->id,
+            'provider_id' => $provider->id,
+        ]);
+
+        // 4. Request the owner details of service 1
+        $response = $this->getJson("/api/v1/services/{$service1->id}/owner");
+
+        // 5. Assertions
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => true,
+                'message' => 'تم استرجاع بيانات صاحب الخدمة وخدماته الأخرى بنجاح',
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                ],
+            ])
+            ->assertJsonCount(1, 'data') // should return service2 but not service1
+            ->assertJsonFragment([
+                'id' => $service2->id,
+                'title' => 'Service 2',
+            ])
+            ->assertJsonMissing([
+                'id' => $service1->id,
+            ]);
+    }
 }

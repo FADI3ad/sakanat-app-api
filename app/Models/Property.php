@@ -44,6 +44,14 @@ class Property extends Model
     }
 
     /**
+     * Get all absence/travel reports for residents in this property.
+     */
+    public function absences(): HasMany
+    {
+        return $this->hasMany(Absence::class);
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

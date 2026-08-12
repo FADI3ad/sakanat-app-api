@@ -301,4 +301,53 @@ class ServiceController extends Controller
             ],
         ]);
     }
+
+    /**
+     * Display the owner details and other services of the owner of a specified service.
+     */
+    public function ownerDetails(Service $service, Request $request)
+    {
+        $provider = $service->provider;
+
+        if (!$provider || !$provider->user) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'صاحب الخدمة غير موجود.',
+            ], 404);
+        }
+
+        $user = $provider->user;
+
+        $otherServices = Service::where('provider_id', $provider->id)
+            ->where('id', '!=', $service->id)
+            ->with(['area', 'type'])
+            ->paginate($request->integer('per_page', 15));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع بيانات صاحب الخدمة وخدماته الأخرى بنجاح',
+            'user'    => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'phone' => $user->phone,
+            ],
+            'data'    => $otherServices->map(fn($item) => [
+                'id'                 => $item->id,
+                'title'              => $item->title,
+                'description'        => $item->description,
+                'image'              => $item->image ? asset('storage/' . $item->image) : null,
+                'is_available'       => (bool) $item->is_available,
+                'delivery_available' => (bool) $item->delevery_available,
+                'price'              => $item->price,
+                'area'               => $item->area?->name,
+                'type'               => $item->type?->name,
+            ]),
+            'meta' => [
+                'total'        => $otherServices->total(),
+                'per_page'     => $otherServices->perPage(),
+                'current_page' => $otherServices->currentPage(),
+                'last_page'    => $otherServices->lastPage(),
+            ],
+        ]);
+    }
 }
