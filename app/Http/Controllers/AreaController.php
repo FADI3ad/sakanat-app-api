@@ -120,9 +120,10 @@ class AreaController extends Controller
                 'price'              => $service->price,
                 'type'               => $service->type?->name,
                 'provider'           => [
-                    'id'    => $service->provider?->id,
-                    'name'  => $service->provider?->user?->name,
-                    'phone' => $service->provider?->user?->phone,
+                    'id'          => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
+                    'name'        => $service->provider?->user?->name,
+                    'phone'       => $service->provider?->user?->phone,
                 ],
             ]),
             'meta' => [

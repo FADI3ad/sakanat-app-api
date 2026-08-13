@@ -150,51 +150,29 @@ class AbsenceController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Property Owner: View all absences across all owned properties
+    | Property Owner: View all absences for a specific property
     |--------------------------------------------------------------------------
-    | GET /v1/properties/absences
+    | GET /v1/properties/{property}/absences
     |
     | Query Params (optional):
-    |   - property_id=X : تصفية على سكن بعينه
     |   - active=1      : البلاغات النشطة حالياً فقط (اليوم داخل الفترة)
     |   - per_page=N    : عدد النتائج في الصفحة (الافتراضي: 15)
     */
-    public function ownerAbsences(Request $request)
+    public function ownerAbsences(Request $request, Property $property)
     {
-        $owner = $request->user();
+        $user = $request->user();
 
-        // جلب معرّفات السكنات التي يمتلكها صاحب الحساب
-        $propertyIds = Property::where('user_id', $owner->id)->pluck('id');
-
-        if ($propertyIds->isEmpty()) {
+        // التحقق من صلاحية الوصول للسكن
+        if ($user->id !== $property->user_id && $user->type !== \App\Enums\UserTypeEnum::ADMIN) {
             return response()->json([
-                'status'  => true,
-                'message' => 'لا توجد سكنات مسجلة باسمك.',
-                'data'    => [],
-                'meta'    => [
-                    'total'        => 0,
-                    'per_page'     => $request->integer('per_page', 15),
-                    'current_page' => 1,
-                    'last_page'    => 1,
-                ],
-            ]);
+                'status'  => false,
+                'message' => 'غير مصرح لك بعرض بلاغات هذا السكن.',
+            ], 403);
         }
 
-        $query = Absence::whereIn('property_id', $propertyIds)
+        $query = Absence::where('property_id', $property->id)
             ->with(['user', 'property', 'bed.room'])
             ->orderByDesc('start_date');
-
-        // فلتر على سكن بعينه (يجب أن يكون ضمن سكنات المالك)
-        if ($request->filled('property_id')) {
-            $pid = (int) $request->property_id;
-            if (! $propertyIds->contains($pid)) {
-                return response()->json([
-                    'status'  => false,
-                    'message' => 'غير مصرح لك بعرض بلاغات هذا السكن.',
-                ], 403);
-            }
-            $query->where('property_id', $pid);
-        }
 
         // فلتر البلاغات النشطة حالياً
         if ($request->boolean('active')) {
@@ -207,7 +185,7 @@ class AbsenceController extends Controller
 
         return response()->json([
             'status'  => true,
-            'message' => 'تم استرجاع بلاغات الغياب للسكنات الخاصة بك بنجاح.',
+            'message' => 'تم استرجاع بلاغات الغياب للسكن بنجاح.',
             'data'    => $absences->map(fn($a) => $this->formatAbsence($a)),
             'meta'    => [
                 'total'        => $absences->total(),

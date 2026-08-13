@@ -35,7 +35,8 @@ class ServiceController extends Controller
                 'area' => $service->area?->name,
                 'type' => $service->type?->name,
                 'provider' => [
-                    'id' => $service->provider?->id,
+                    'id' => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
                     'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],
@@ -95,7 +96,8 @@ class ServiceController extends Controller
                 'area' => $service->area?->name,
                 'type' => $service->type?->name,
                 'provider' => [
-                    'id' => $service->provider?->id,
+                    'id' => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
                     'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],
@@ -132,7 +134,8 @@ class ServiceController extends Controller
                 'area' => $service->area?->name,
                 'type' => $service->type?->name,
                 'provider' => [
-                    'id' => $service->provider?->id,
+                    'id' => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
                     'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],
@@ -213,7 +216,8 @@ class ServiceController extends Controller
                 'area' => $service->area?->name,
                 'type' => $service->type?->name,
                 'provider' => [
-                    'id' => $service->provider?->id,
+                    'id' => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
                     'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],

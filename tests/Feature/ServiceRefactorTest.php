@@ -100,6 +100,7 @@ class ServiceRefactorTest extends TestCase
                         'type',
                         'provider' => [
                             'id',
+                            'provider_id',
                             'name',
                             'phone',
                         ],
@@ -139,10 +140,19 @@ class ServiceRefactorTest extends TestCase
                     'type',
                     'provider' => [
                         'id',
+                        'provider_id',
                         'name',
                         'phone',
                     ],
                 ],
+            ])
+            ->assertJson([
+                'data' => [
+                    'provider' => [
+                        'id' => $service->provider->user_id,
+                        'provider_id' => $service->provider->id,
+                    ]
+                ]
             ]);
     }
 

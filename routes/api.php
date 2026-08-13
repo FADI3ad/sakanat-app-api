@@ -176,13 +176,12 @@ Route::prefix('v1')->group(function () {
 
             /*
              * Absence / Travel Module (Property Owner)
-             * - GET /properties/absences : عرض كل بلاغات الغياب في جميع السكنات التابعة للمالك
+             * - GET /properties/{property}/absences : عرض كل بلاغات الغياب في السكن التابع للمالك
              *   Optional query params:
-             *     - property_id=X : تصفية على سكن بعينه
              *     - active=1      : البلاغات النشطة حالياً فقط
              *     - per_page=N    : عدد النتائج في الصفحة
              */
-            Route::get('/properties/absences', [AbsenceController::class, 'ownerAbsences']);
+            Route::get('/properties/{property}/absences', [AbsenceController::class, 'ownerAbsences']);
 
             /*
              * Rooms Module (nested under properties)

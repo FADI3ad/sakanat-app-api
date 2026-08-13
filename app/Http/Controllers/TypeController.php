@@ -155,9 +155,10 @@ class TypeController extends Controller
                 'price'              => $service->price,
                 'area'               => $service->area?->name,
                 'provider'           => [
-                    'id'    => $service->provider?->id,
-                    'name'  => $service->provider?->user?->name,
-                    'phone' => $service->provider?->user?->phone,
+                    'id'          => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
+                    'name'        => $service->provider?->user?->name,
+                    'phone'       => $service->provider?->user?->phone,
                 ],
             ]),
             'meta' => [
