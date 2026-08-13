@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Service;
-use App\Models\Provider;
-use App\Models\User;
 use App\Enums\UserTypeEnum;
 use App\Http\Requests\Service\StoreServiceRequest;
 use App\Http\Requests\Service\UpdateServiceRequest;
+use App\Models\Provider;
+use App\Models\Service;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,29 +22,29 @@ class ServiceController extends Controller
             ->paginate($request->integer('per_page', 15));
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم استرجاع الخدمات بنجاح',
-            'data'    => $services->map(fn($service) => [
-                'id'                 => $service->id,
-                'title'              => $service->title,
-                'description'        => $service->description,
-                'image'              => $service->image ? asset('storage/' . $service->image) : null,
-                'is_available'       => (bool) $service->is_available,
+            'data' => $services->map(fn ($service) => [
+                'id' => $service->id,
+                'title' => $service->title,
+                'description' => $service->description,
+                'image' => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available' => (bool) $service->is_available,
                 'delivery_available' => (bool) $service->delevery_available,
-                'price'              => $service->price,
-                'area'               => $service->area?->name,
-                'type'               => $service->type?->name,
-                'provider'           => [
-                    'id'    => $service->provider?->id,
-                    'name'  => $service->provider?->user?->name,
+                'price' => $service->price,
+                'area' => $service->area?->name,
+                'type' => $service->type?->name,
+                'provider' => [
+                    'id' => $service->provider?->id,
+                    'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],
             ]),
             'meta' => [
-                'total'        => $services->total(),
-                'per_page'     => $services->perPage(),
+                'total' => $services->total(),
+                'per_page' => $services->perPage(),
                 'current_page' => $services->currentPage(),
-                'last_page'    => $services->lastPage(),
+                'last_page' => $services->lastPage(),
             ],
         ]);
     }
@@ -62,7 +62,7 @@ class ServiceController extends Controller
 
         if ($existingType && (int) $existingType !== (int) $request->type_id) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'لا يمكنك إضافة خدمة بنوع مختلف، جميع خدماتك يجب أن تكون من نفس النوع (تخصص واحد فقط).',
             ], 422);
         }
@@ -74,32 +74,32 @@ class ServiceController extends Controller
         }
 
         $data['delevery_available'] = $request->boolean('delevery_available');
-        $data['is_available']       = $request->boolean('is_available', true);
-        $data['provider_id']        = $provider->id;
+        $data['is_available'] = $request->boolean('is_available', true);
+        $data['provider_id'] = $provider->id;
 
         $service = Service::create($data);
 
         $service->load(['provider.user', 'area', 'type']);
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم إضافة الخدمة بنجاح',
-            'data'    => [
-                'id'                 => $service->id,
-                'title'              => $service->title,
-                'description'        => $service->description,
-                'image'              => $service->image ? asset('storage/' . $service->image) : null,
-                'is_available'       => (bool) $service->is_available,
+            'data' => [
+                'id' => $service->id,
+                'title' => $service->title,
+                'description' => $service->description,
+                'image' => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available' => (bool) $service->is_available,
                 'delivery_available' => (bool) $service->delevery_available,
-                'price'              => $service->price,
-                'area'               => $service->area?->name,
-                'type'               => $service->type?->name,
-                'provider'           => [
-                    'id'    => $service->provider?->id,
-                    'name'  => $service->provider?->user?->name,
+                'price' => $service->price,
+                'area' => $service->area?->name,
+                'type' => $service->type?->name,
+                'provider' => [
+                    'id' => $service->provider?->id,
+                    'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],
-            ]
+            ],
         ], 201);
     }
 
@@ -112,36 +112,36 @@ class ServiceController extends Controller
             'provider.user',
             'area',
             'type',
-            'comments' => fn($q) => $q->where('is_active', true)
-                                      ->with('user')
-                                      ->latest()
-                                      ->limit(10),
+            'comments' => fn ($q) => $q->where('is_active', true)
+                ->with('user')
+                ->latest()
+                ->limit(10),
         ]);
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم استرجاع تفاصيل الخدمة بنجاح',
-            'data'    => [
-                'id'                 => $service->id,
-                'title'              => $service->title,
-                'description'        => $service->description,
-                'image'              => $service->image ? asset('storage/' . $service->image) : null,
-                'is_available'       => (bool) $service->is_available,
+            'data' => [
+                'id' => $service->id,
+                'title' => $service->title,
+                'description' => $service->description,
+                'image' => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available' => (bool) $service->is_available,
                 'delivery_available' => (bool) $service->delevery_available,
-                'price'              => $service->price,
-                'area'               => $service->area?->name,
-                'type'               => $service->type?->name,
-                'provider'           => [
-                    'id'    => $service->provider?->id,
-                    'name'  => $service->provider?->user?->name,
+                'price' => $service->price,
+                'area' => $service->area?->name,
+                'type' => $service->type?->name,
+                'provider' => [
+                    'id' => $service->provider?->id,
+                    'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],
-                'comments'           => $service->comments->map(fn($comment) => [
-                    'id'         => $comment->id,
-                    'body'       => $comment->body,
+                'comments' => $service->comments->map(fn ($comment) => [
+                    'id' => $comment->id,
+                    'body' => $comment->body,
                     'created_at' => $comment->created_at,
-                    'user'       => [
-                        'id'   => $comment->user?->id,
+                    'user' => [
+                        'id' => $comment->user?->id,
                         'name' => $comment->user?->name,
                     ],
                 ]),
@@ -158,9 +158,9 @@ class ServiceController extends Controller
         $provider = $user->provider;
 
         // Authorize owner
-        if (!$provider || $service->provider_id !== $provider->id) {
+        if (! $provider || $service->provider_id !== $provider->id) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'غير مصرح لك بتعديل هذه الخدمة.',
             ], 403);
         }
@@ -172,7 +172,7 @@ class ServiceController extends Controller
 
             if ($hasOtherServices) {
                 return response()->json([
-                    'status'  => false,
+                    'status' => false,
                     'message' => 'لا يمكنك تغيير نوع الخدمة لأن لديك خدمات أخرى مسجلة بنفس النوع الحالي.',
                 ], 422);
             }
@@ -200,21 +200,21 @@ class ServiceController extends Controller
         $service->load(['provider.user', 'area', 'type']);
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم تحديث الخدمة بنجاح',
-            'data'    => [
-                'id'                 => $service->id,
-                'title'              => $service->title,
-                'description'        => $service->description,
-                'image'              => $service->image ? asset('storage/' . $service->image) : null,
-                'is_available'       => (bool) $service->is_available,
+            'data' => [
+                'id' => $service->id,
+                'title' => $service->title,
+                'description' => $service->description,
+                'image' => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available' => (bool) $service->is_available,
                 'delivery_available' => (bool) $service->delevery_available,
-                'price'              => $service->price,
-                'area'               => $service->area?->name,
-                'type'               => $service->type?->name,
-                'provider'           => [
-                    'id'    => $service->provider?->id,
-                    'name'  => $service->provider?->user?->name,
+                'price' => $service->price,
+                'area' => $service->area?->name,
+                'type' => $service->type?->name,
+                'provider' => [
+                    'id' => $service->provider?->id,
+                    'name' => $service->provider?->user?->name,
                     'phone' => $service->provider?->user?->phone,
                 ],
             ],
@@ -230,9 +230,9 @@ class ServiceController extends Controller
         $provider = $user->provider;
 
         // Authorize owner
-        if (!$provider || $service->provider_id !== $provider->id) {
+        if (! $provider || $service->provider_id !== $provider->id) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'غير مصرح لك بحذف هذه الخدمة.',
             ], 403);
         }
@@ -244,7 +244,7 @@ class ServiceController extends Controller
         $service->delete();
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم حذف الخدمة بنجاح',
         ]);
     }
@@ -256,16 +256,16 @@ class ServiceController extends Controller
     {
         if ($user->type !== UserTypeEnum::PROVIDER) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'المستخدم ليس مقدم خدمة.',
             ], 400);
         }
 
         $provider = $user->provider;
 
-        if (!$provider || !$provider->services()->exists()) {
+        if (! $provider || ! $provider->services()->exists()) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'لا توجد خدمات لهذا المستخدم.',
             ], 400);
         }
@@ -275,29 +275,29 @@ class ServiceController extends Controller
             ->paginate($request->integer('per_page', 15));
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم استرجاع خدمات المستخدم بنجاح',
-            'user'    => [
-                'id'    => $user->id,
-                'name'  => $user->name,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
                 'phone' => $user->phone,
             ],
-            'data'    => $services->map(fn($service) => [
-                'id'                 => $service->id,
-                'title'              => $service->title,
-                'description'        => $service->description,
-                'image'              => $service->image ? asset('storage/' . $service->image) : null,
-                'is_available'       => (bool) $service->is_available,
+            'data' => $services->map(fn ($service) => [
+                'id' => $service->id,
+                'title' => $service->title,
+                'description' => $service->description,
+                'image' => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available' => (bool) $service->is_available,
                 'delivery_available' => (bool) $service->delevery_available,
-                'price'              => $service->price,
-                'area'               => $service->area?->name,
-                'type'               => $service->type?->name,
+                'price' => $service->price,
+                'area' => $service->area?->name,
+                'type' => $service->type?->name,
             ]),
             'meta' => [
-                'total'        => $services->total(),
-                'per_page'     => $services->perPage(),
+                'total' => $services->total(),
+                'per_page' => $services->perPage(),
                 'current_page' => $services->currentPage(),
-                'last_page'    => $services->lastPage(),
+                'last_page' => $services->lastPage(),
             ],
         ]);
     }
@@ -309,9 +309,9 @@ class ServiceController extends Controller
     {
         $provider = $service->provider;
 
-        if (!$provider || !$provider->user) {
+        if (! $provider || ! $provider->user) {
             return response()->json([
-                'status'  => false,
+                'status' => false,
                 'message' => 'صاحب الخدمة غير موجود.',
             ], 404);
         }
@@ -319,34 +319,33 @@ class ServiceController extends Controller
         $user = $provider->user;
 
         $otherServices = Service::where('provider_id', $provider->id)
-            ->where('id', '!=', $service->id)
             ->with(['area', 'type'])
             ->paginate($request->integer('per_page', 15));
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم استرجاع بيانات صاحب الخدمة وخدماته الأخرى بنجاح',
-            'user'    => [
-                'id'    => $user->id,
-                'name'  => $user->name,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
                 'phone' => $user->phone,
             ],
-            'data'    => $otherServices->map(fn($item) => [
-                'id'                 => $item->id,
-                'title'              => $item->title,
-                'description'        => $item->description,
-                'image'              => $item->image ? asset('storage/' . $item->image) : null,
-                'is_available'       => (bool) $item->is_available,
+            'data' => $otherServices->map(fn ($item) => [
+                'id' => $item->id,
+                'title' => $item->title,
+                'description' => $item->description,
+                'image' => $item->image ? asset('storage/'.$item->image) : null,
+                'is_available' => (bool) $item->is_available,
                 'delivery_available' => (bool) $item->delevery_available,
-                'price'              => $item->price,
-                'area'               => $item->area?->name,
-                'type'               => $item->type?->name,
+                'price' => $item->price,
+                'area' => $item->area?->name,
+                'type' => $item->type?->name,
             ]),
             'meta' => [
-                'total'        => $otherServices->total(),
-                'per_page'     => $otherServices->perPage(),
+                'total' => $otherServices->total(),
+                'per_page' => $otherServices->perPage(),
                 'current_page' => $otherServices->currentPage(),
-                'last_page'    => $otherServices->lastPage(),
+                'last_page' => $otherServices->lastPage(),
             ],
         ]);
     }

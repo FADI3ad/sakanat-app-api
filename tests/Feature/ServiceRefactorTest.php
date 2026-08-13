@@ -2,8 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserTypeEnum;
+use App\Models\Area;
+use App\Models\Provider;
 use App\Models\Service;
 use App\Models\Type;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -37,14 +41,14 @@ class ServiceRefactorTest extends TestCase
                         'sort_order',
                         'status',
                         'icon',
-                    ]
+                    ],
                 ],
                 'meta' => [
                     'total',
                     'per_page',
                     'current_page',
                     'last_page',
-                ]
+                ],
             ]);
     }
 
@@ -59,16 +63,16 @@ class ServiceRefactorTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'status'  => true,
+                'status' => true,
                 'message' => 'تم استرجاع تفاصيل نوع الخدمة بنجاح',
-                'data'    => [
-                    'id'          => $type->id,
-                    'name'        => $type->name,
+                'data' => [
+                    'id' => $type->id,
+                    'name' => $type->name,
                     'description' => $type->description,
-                    'sort_order'  => $type->sort_order,
-                    'status'      => (bool) $type->status,
-                    'icon'        => $type->icon,
-                ]
+                    'sort_order' => $type->sort_order,
+                    'status' => (bool) $type->status,
+                    'icon' => $type->icon,
+                ],
             ]);
     }
 
@@ -98,15 +102,15 @@ class ServiceRefactorTest extends TestCase
                             'id',
                             'name',
                             'phone',
-                        ]
-                    ]
+                        ],
+                    ],
                 ],
                 'meta' => [
                     'total',
                     'per_page',
                     'current_page',
                     'last_page',
-                ]
+                ],
             ]);
     }
 
@@ -137,8 +141,8 @@ class ServiceRefactorTest extends TestCase
                         'id',
                         'name',
                         'phone',
-                    ]
-                ]
+                    ],
+                ],
             ]);
     }
 
@@ -167,14 +171,14 @@ class ServiceRefactorTest extends TestCase
                         'price',
                         'area',
                         'provider' => ['id', 'name', 'phone'],
-                    ]
+                    ],
                 ],
                 'meta' => ['total', 'per_page', 'current_page', 'last_page'],
             ])
             ->assertJson([
                 'status' => true,
-                'type'   => [
-                    'id'   => $type->id,
+                'type' => [
+                    'id' => $type->id,
                     'name' => $type->name,
                 ],
             ]);
@@ -193,16 +197,16 @@ class ServiceRefactorTest extends TestCase
     public function test_can_get_service_owner_details_and_other_services()
     {
         // 1. Create a Provider with user
-        $user = \App\Models\User::factory()->create([
-            'type' => \App\Enums\UserTypeEnum::PROVIDER,
+        $user = User::factory()->create([
+            'type' => UserTypeEnum::PROVIDER,
         ]);
-        $provider = \App\Models\Provider::create([
+        $provider = Provider::create([
             'user_id' => $user->id,
         ]);
 
         // 2. Query seeded Area and Type
-        $area = \App\Models\Area::first();
-        $type = \App\Models\Type::first();
+        $area = Area::first();
+        $type = Type::first();
 
         // 3. Create two services for this provider
         $service1 = Service::create([
@@ -241,13 +245,14 @@ class ServiceRefactorTest extends TestCase
                     'phone' => $user->phone,
                 ],
             ])
-            ->assertJsonCount(1, 'data') // should return service2 but not service1
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment([
+                'id' => $service1->id,
+                'title' => 'Service 1',
+            ])
             ->assertJsonFragment([
                 'id' => $service2->id,
                 'title' => 'Service 2',
-            ])
-            ->assertJsonMissing([
-                'id' => $service1->id,
             ]);
     }
 }
