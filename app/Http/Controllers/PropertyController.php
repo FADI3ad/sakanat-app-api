@@ -25,6 +25,7 @@ class PropertyController extends Controller
             'latitude'        => $property->latitude,
             'longitude'       => $property->longitude,
             'radius'          => $property->radius,
+            'curfew_time'     => $property->curfew_time,
             'is_available'    => (bool) $property->is_available,
             'description'     => $property->description,
             'created_at'      => $property->created_at,

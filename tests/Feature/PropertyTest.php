@@ -239,9 +239,10 @@ class PropertyTest extends TestCase
 
         // Property for owner 1
         Property::create([
-            'user_id' => $owner1->id,
-            'title'   => 'سكن المالك الأول',
-            'city'    => 'القاهرة',
+            'user_id'     => $owner1->id,
+            'title'       => 'سكن المالك الأول',
+            'city'        => 'القاهرة',
+            'curfew_time' => '22:00:00',
         ]);
 
         // Property for owner 2
@@ -257,7 +258,8 @@ class PropertyTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.title', 'سكن المالك الأول');
+            ->assertJsonPath('data.0.title', 'سكن المالك الأول')
+            ->assertJsonPath('data.0.curfew_time', '22:00:00');
     }
 
     /**
