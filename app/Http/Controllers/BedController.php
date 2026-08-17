@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserTypeEnum;
 use App\Models\Room;
 use App\Models\Bed;
 use App\Http\Requests\Bed\StoreBedRequest;
@@ -66,12 +67,12 @@ class BedController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Helper: Ensure the authenticated user owns the room's property
+    | Helper: Ensure the authenticated user owns the room's property or is Admin
     |--------------------------------------------------------------------------
     */
     private function authorizeRoomOwner(Request $request, Room $room): bool
     {
-        return $request->user()->id === $room->property->user_id;
+        return $request->user()->id === $room->property->user_id || $request->user()->type === UserTypeEnum::ADMIN;
     }
 
     /*

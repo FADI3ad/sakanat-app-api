@@ -353,4 +353,145 @@ class ServiceController extends Controller
             ],
         ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin: List all services with filters (Moderation)
+    |--------------------------------------------------------------------------
+    | GET /v1/admin/services
+    */
+    public function adminIndex(Request $request)
+    {
+        $query = Service::with(['provider.user', 'area', 'type']);
+
+        if ($request->filled('type_id')) {
+            $query->where('type_id', $request->type_id);
+        }
+
+        if ($request->filled('area_id')) {
+            $query->where('area_id', $request->area_id);
+        }
+
+        if ($request->filled('is_available')) {
+            $query->where('is_available', filter_var($request->is_available, FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $services = $query->latest()->paginate($request->integer('per_page', 15));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع جميع الخدمات بنجاح',
+            'data'    => $services->map(fn ($service) => [
+                'id'                 => $service->id,
+                'title'              => $service->title,
+                'description'        => $service->description,
+                'image'              => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available'       => (bool) $service->is_available,
+                'delivery_available' => (bool) $service->delevery_available,
+                'price'              => $service->price,
+                'area'               => $service->area?->name,
+                'type'               => $service->type?->name,
+                'provider'           => [
+                    'id'          => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
+                    'name'        => $service->provider?->user?->name,
+                    'phone'       => $service->provider?->user?->phone,
+                ],
+                'created_at'         => $service->created_at,
+            ]),
+            'meta'    => [
+                'total'        => $services->total(),
+                'per_page'     => $services->perPage(),
+                'current_page' => $services->currentPage(),
+                'last_page'    => $services->lastPage(),
+            ],
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin: Show service details
+    |--------------------------------------------------------------------------
+    | GET /v1/admin/services/{service}
+    */
+    public function adminShow(Service $service)
+    {
+        $service->load(['provider.user', 'area', 'type', 'comments.user']);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع تفاصيل الخدمة بنجاح',
+            'data'    => [
+                'id'                 => $service->id,
+                'title'              => $service->title,
+                'description'        => $service->description,
+                'image'              => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available'       => (bool) $service->is_available,
+                'delivery_available' => (bool) $service->delevery_available,
+                'price'              => $service->price,
+                'area'               => $service->area?->name,
+                'type'               => $service->type?->name,
+                'provider'           => [
+                    'id'          => $service->provider?->user_id,
+                    'provider_id' => $service->provider?->id,
+                    'name'        => $service->provider?->user?->name,
+                    'phone'       => $service->provider?->user?->phone,
+                ],
+                'comments_count'     => $service->comments->count(),
+            ],
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin: Toggle service availability (Show/Hide)
+    |--------------------------------------------------------------------------
+    | PATCH /v1/admin/services/{service}/toggle
+    */
+    public function adminToggle(Service $service)
+    {
+        $service->update([
+            'is_available' => !$service->is_available,
+        ]);
+
+        $statusText = $service->is_available ? 'تم تفعيل الخدمة بنجاح' : 'تم تعليق/إخفاء الخدمة بنجاح';
+
+        return response()->json([
+            'status'  => true,
+            'message' => $statusText,
+            'data'    => [
+                'id'           => $service->id,
+                'is_available' => (bool) $service->is_available,
+            ],
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin: Delete any service (Moderation)
+    |--------------------------------------------------------------------------
+    | DELETE /v1/admin/services/{service}
+    */
+    public function adminDestroy(Service $service)
+    {
+        if ($service->image) {
+            Storage::disk('public')->delete($service->image);
+        }
+
+        $service->delete();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم حذف الخدمة بواسطة المشرف بنجاح',
+        ]);
+    }
 }
+

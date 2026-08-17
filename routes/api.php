@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\TypeController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ContactController;
@@ -247,6 +248,22 @@ Route::prefix('v1')->group(function () {
         Route::middleware(['admin'])->prefix('admin')->group(function () {
 
             /*
+             * Admin: Users Management
+             * - GET    /admin/users               : List all users (filter by type, is_blocked, search)
+             * - POST   /admin/users               : Create a new user
+             * - GET    /admin/users/{user}        : Show specific user details
+             * - PUT    /admin/users/{user}        : Update user details
+             * - PATCH  /admin/users/{user}/block  : Toggle block status (block/unblock)
+             * - DELETE /admin/users/{user}        : Delete a user
+             */
+            Route::get('/users', [UserController::class, 'index']);
+            Route::post('/users', [UserController::class, 'store']);
+            Route::get('/users/{user}', [UserController::class, 'show']);
+            Route::put('/users/{user}', [UserController::class, 'update']);
+            Route::patch('/users/{user}/block', [UserController::class, 'toggleBlock']);
+            Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
+            /*
              * Admin: Contact Messages Management
              * - GET    /admin/contact               : List all messages
              * - GET    /admin/contact/{message}     : View a message (marks as read)
@@ -279,12 +296,47 @@ Route::prefix('v1')->group(function () {
             Route::delete('/properties/{property}', [PropertyController::class, 'adminDestroy']);
 
             /*
+             * Admin: Services Moderation
+             * - GET    /admin/services                    : List all services
+             * - GET    /admin/services/{service}         : Show service details
+             * - PATCH  /admin/services/{service}/toggle   : Toggle service availability
+             * - DELETE /admin/services/{service}          : Delete any service
+             */
+            Route::get('/services', [ServiceController::class, 'adminIndex']);
+            Route::get('/services/{service}', [ServiceController::class, 'adminShow']);
+            Route::patch('/services/{service}/toggle', [ServiceController::class, 'adminToggle']);
+            Route::delete('/services/{service}', [ServiceController::class, 'adminDestroy']);
+
+            /*
+             * Admin: Service Types Management
+             * - POST   /admin/types          : Create service type
+             * - PUT    /admin/types/{type}   : Update service type
+             * - DELETE /admin/types/{type}   : Delete service type
+             */
+            Route::post('/types', [TypeController::class, 'store']);
+            Route::put('/types/{type}', [TypeController::class, 'update']);
+            Route::delete('/types/{type}', [TypeController::class, 'destroy']);
+
+            /*
+             * Admin: Delivery Services Management
+             * - GET    /admin/delivery-services                    : List delivery services
+             * - POST   /admin/delivery-services                    : Create delivery service
+             * - PUT    /admin/delivery-services/{deliveryService}  : Update delivery service
+             * - DELETE /admin/delivery-services/{deliveryService}  : Delete delivery service
+             */
+            Route::get('/delivery-services', [DeliveryServiceController::class, 'index']);
+            Route::post('/delivery-services', [DeliveryServiceController::class, 'store']);
+            Route::put('/delivery-services/{deliveryService}', [DeliveryServiceController::class, 'update']);
+            Route::delete('/delivery-services/{deliveryService}', [DeliveryServiceController::class, 'destroy']);
+
+            /*
              * Admin: Messages Management (Moderation)
              * - GET    /admin/messages                    : List all messages
              * - DELETE /admin/messages/{message}          : Delete any message
              */
             Route::get('/messages', [MessageController::class, 'adminIndex']);
             Route::delete('/messages/{message}', [MessageController::class, 'adminDestroy']);
+
             /*
              * Admin: Areas Management
              * - POST   /admin/areas          : Add area
@@ -294,6 +346,18 @@ Route::prefix('v1')->group(function () {
             Route::post('/areas', [AreaController::class, 'store']);
             Route::put('/areas/{area}', [AreaController::class, 'update']);
             Route::delete('/areas/{area}', [AreaController::class, 'destroy']);
+
+            /*
+             * Admin: System-wide Attendance Overview
+             * - GET    /admin/attendance     : List all attendance logs across all properties
+             */
+            Route::get('/attendance', [AttendanceController::class, 'adminLogs']);
+
+            /*
+             * Admin: System-wide Absences Overview
+             * - GET    /admin/absences       : List all absence reports across all properties
+             */
+            Route::get('/absences', [AbsenceController::class, 'adminAbsences']);
         });
     });
 });

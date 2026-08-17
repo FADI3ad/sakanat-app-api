@@ -444,4 +444,53 @@ class AttendanceController extends Controller
             'attendance_rate' => $total > 0 ? round((($present + $late) / $total) * 100, 1) : 0,
         ];
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin: System-wide Attendance Logs Overview
+    |--------------------------------------------------------------------------
+    | GET /v1/admin/attendance
+    */
+    public function adminLogs(Request $request)
+    {
+        $query = AttendanceLog::with([
+            'user:id,name,email,phone,type,is_blocked',
+            'bed.room:id,property_id,name,description',
+            'property:id,title,city,curfew_time'
+        ])->orderByDesc('date');
+
+        if ($request->filled('property_id')) {
+            $query->where('property_id', $request->property_id);
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('date', $request->date);
+        } elseif ($request->filled('month')) {
+            $query->whereYear('date', substr($request->month, 0, 4))
+                  ->whereMonth('date', substr($request->month, 5, 2));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $logs = $query->paginate($request->integer('per_page', 30));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع سجل الحضور الكلي بنجاح',
+            'data'    => $logs->map(fn($log) => $this->formatLog($log)),
+            'meta'    => [
+                'total'        => $logs->total(),
+                'per_page'     => $logs->perPage(),
+                'current_page' => $logs->currentPage(),
+                'last_page'    => $logs->lastPage(),
+            ],
+        ]);
+    }
 }
+

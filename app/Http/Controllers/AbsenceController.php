@@ -195,4 +195,45 @@ class AbsenceController extends Controller
             ],
         ]);
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin: View all absence/travel reports across all properties
+    |--------------------------------------------------------------------------
+    | GET /v1/admin/absences
+    */
+    public function adminAbsences(Request $request)
+    {
+        $query = Absence::with(['user', 'property', 'bed.room'])
+            ->orderByDesc('start_date');
+
+        if ($request->filled('property_id')) {
+            $query->where('property_id', $request->property_id);
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->boolean('active')) {
+            $today = Carbon::today()->toDateString();
+            $query->where('start_date', '<=', $today)
+                  ->where('end_date', '>=', $today);
+        }
+
+        $absences = $query->paginate($request->integer('per_page', 15));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'تم استرجاع جميع بلاغات الغياب بنجاح.',
+            'data'    => $absences->map(fn($a) => $this->formatAbsence($a)),
+            'meta'    => [
+                'total'        => $absences->total(),
+                'per_page'     => $absences->perPage(),
+                'current_page' => $absences->currentPage(),
+                'last_page'    => $absences->lastPage(),
+            ],
+        ]);
+    }
 }
+

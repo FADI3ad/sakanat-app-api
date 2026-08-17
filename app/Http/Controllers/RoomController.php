@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserTypeEnum;
 use App\Models\Property;
 use App\Models\Room;
 use App\Http\Requests\Room\StoreRoomRequest;
@@ -40,12 +41,12 @@ class RoomController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Helper: Ensure the authenticated user owns the property
+    | Helper: Ensure the authenticated user owns the property or is Admin
     |--------------------------------------------------------------------------
     */
     private function authorizePropertyOwner(Request $request, Property $property): bool
     {
-        return $request->user()->id === $property->user_id;
+        return $request->user()->id === $property->user_id || $request->user()->type === UserTypeEnum::ADMIN;
     }
 
     /*
