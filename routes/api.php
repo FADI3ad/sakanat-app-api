@@ -1,20 +1,20 @@
 <?php
 
+use App\Http\Controllers\AbsenceController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\TypeController;
-use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\BedController;
 use App\Http\Controllers\ContactController;
-use App\Http\Controllers\ServiceCommentController;
+use App\Http\Controllers\DeliveryServiceController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PropertyController;
 use App\Http\Controllers\RoomController;
-use App\Http\Controllers\BedController;
-use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ServiceCommentController;
+use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\TypeController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\UtilityBillController;
-use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\AreaController;
-use App\Http\Controllers\DeliveryServiceController;
-use App\Http\Controllers\AbsenceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1/auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth:sanctum', 'active_device']);
 });
 
 /*
@@ -90,7 +90,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/services/{service}/comments', [ServiceCommentController::class, 'index']);
 
     // --- Protected Routes ---
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum', 'active_device'])->group(function () {
 
         /*
          * Contact (User → Admin)
@@ -163,7 +163,6 @@ Route::prefix('v1')->group(function () {
             Route::post('/resident/absences', [AbsenceController::class, 'store']);
             Route::get('/resident/absences', [AbsenceController::class, 'myAbsences']);
         });
-
 
         // --- Property Owner Routes ---
         Route::middleware(['property_owner'])->group(function () {
@@ -243,7 +242,6 @@ Route::prefix('v1')->group(function () {
             Route::patch('/properties/{property}/curfew', [AttendanceController::class, 'updateCurfew']);
         });
 
-
         // --- Admin-Only Routes ---
         Route::middleware(['admin'])->prefix('admin')->group(function () {
 
@@ -259,6 +257,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/users', [UserController::class, 'index']);
             Route::post('/users', [UserController::class, 'store']);
             Route::get('/users/{user}', [UserController::class, 'show']);
+            Route::post('/users/{user}/revoke-device', [UserController::class, 'revokeDevice']);
             Route::put('/users/{user}', [UserController::class, 'update']);
             Route::patch('/users/{user}/block', [UserController::class, 'toggleBlock']);
             Route::delete('/users/{user}', [UserController::class, 'destroy']);
