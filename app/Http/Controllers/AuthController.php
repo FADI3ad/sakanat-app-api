@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
+use App\Services\ActiveDeviceService;
 use App\Services\LoginService;
 use Illuminate\Http\Request;
 
-
 class AuthController extends Controller
 {
-    public function login(LoginRequest $request , LoginService $service)
+    public function login(LoginRequest $request, LoginService $service)
     {
         $result = $service->login($request->validated());
         $user = $result['user'];
@@ -34,12 +34,14 @@ class AuthController extends Controller
         return (new UserController())->store($request);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request, ActiveDeviceService $activeDevices)
     {
-        $request->user()?->currentAccessToken()?->delete();
+        $token = $request->user()?->currentAccessToken();
+        $activeDevices->release($request->user(), $token?->id);
+        $token?->delete();
 
         return response()->json([
-            'status'  => true,
+            'status' => true,
             'message' => 'تم تسجيل الخروج بنجاح',
         ]);
     }
