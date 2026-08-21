@@ -437,4 +437,200 @@ class ProviderServiceTest extends TestCase
                 'message' => 'لا توجد خدمات لهذا المستخدم.',
             ]);
     }
+
+    /**
+     * Test admin can create provider user with assigned type_id.
+     */
+    public function test_admin_can_create_provider_with_type_id()
+    {
+        $admin = User::create([
+            'name'     => 'Admin User',
+            'email'    => 'admin@test.com',
+            'phone'    => '01000000099',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::ADMIN->value,
+        ]);
+
+        $type = Type::first();
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/v1/admin/users', [
+            'name'     => 'Assigned Provider',
+            'email'    => 'assigned_provider@test.com',
+            'phone'    => '01000000088',
+            'password' => 'password123',
+            'type'     => 'provider',
+            'type_id'  => $type->id,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => true,
+                'data'   => [
+                    'provider' => [
+                        'type_id'   => $type->id,
+                        'type_name' => $type->name,
+                    ],
+                ],
+            ]);
+
+        $this->assertDatabaseHas('providers', [
+            'type_id' => $type->id,
+        ]);
+    }
+
+    /**
+     * Test provider with assigned type_id creates service without specifying type_id in request.
+     */
+    public function test_provider_with_assigned_type_id_creates_service_without_type_id()
+    {
+        $type = Type::first();
+
+        $user = User::create([
+            'name'     => 'Assigned Provider User',
+            'email'    => 'assigned_user@test.com',
+            'phone'    => '01000000077',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::PROVIDER->value,
+        ]);
+
+        Provider::create([
+            'user_id' => $user->id,
+            'type_id' => $type->id,
+        ]);
+
+        $area = Area::first();
+
+        Sanctum::actingAs($user);
+
+        // Omit type_id from request body
+        $response = $this->postJson('/api/v1/services', [
+            'title'              => 'خدمة تابعة للتخصص التلقائي',
+            'description'        => 'وصف الخدمة',
+            'delevery_available' => true,
+            'price'              => 100.00,
+            'area_id'            => $area->id,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => true,
+                'data'   => [
+                    'type' => $type->name,
+                ],
+            ]);
+
+        $this->assertDatabaseHas('services', [
+            'title'   => 'خدمة تابعة للتخصص التلقائي',
+            'type_id' => $type->id,
+        ]);
+    }
+
+    /**
+     * Test unauthenticated or non-admin cannot access register endpoint.
+     */
+    public function test_unauthenticated_or_non_admin_cannot_access_register()
+    {
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name'     => 'Test Provider',
+            'email'    => 'test_reg@test.com',
+            'phone'    => '01011112233',
+            'password' => 'password123',
+            'type'     => 'provider',
+        ]);
+
+        $response->assertStatus(401);
+
+        $resident = User::create([
+            'name'     => 'Resident User',
+            'email'    => 'res_reg@test.com',
+            'phone'    => '01011112244',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::RESIDENT->value,
+        ]);
+
+        Sanctum::actingAs($resident);
+
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name'     => 'Test Provider',
+            'email'    => 'test_reg2@test.com',
+            'phone'    => '01011112255',
+            'password' => 'password123',
+            'type'     => 'provider',
+        ]);
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test admin register requires type_id when type is provider.
+     */
+    public function test_admin_register_requires_type_id_for_provider()
+    {
+        $admin = User::create([
+            'name'     => 'Admin Reg',
+            'email'    => 'admin_reg@test.com',
+            'phone'    => '01000000011',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::ADMIN->value,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name'     => 'Provider Without TypeId',
+            'email'    => 'notypeid@test.com',
+            'phone'    => '01000000022',
+            'password' => 'password123',
+            'type'     => 'provider',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['type_id']);
+    }
+
+    /**
+     * Test admin register creates provider with type_id successfully.
+     */
+    public function test_admin_register_creates_provider_with_type_id()
+    {
+        $admin = User::create([
+            'name'     => 'Admin Reg Success',
+            'email'    => 'admin_reg_s@test.com',
+            'phone'    => '01000000033',
+            'password' => bcrypt('password'),
+            'type'     => UserTypeEnum::ADMIN->value,
+        ]);
+
+        $type = Type::first();
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name'     => 'Provider Registered By Admin',
+            'email'    => 'registered_provider@test.com',
+            'phone'    => '01000000044',
+            'password' => 'password123',
+            'type'     => 'provider',
+            'type_id'  => $type->id,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'status' => true,
+                'message' => 'تم إنشاء المستخدم بنجاح',
+                'data'   => [
+                    'type'     => 'provider',
+                    'provider' => [
+                        'type_id'   => $type->id,
+                        'type_name' => $type->name,
+                    ],
+                ],
+            ]);
+
+        $this->assertDatabaseHas('providers', [
+            'type_id' => $type->id,
+        ]);
+    }
 }

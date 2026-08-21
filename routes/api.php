@@ -24,8 +24,8 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('v1/auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::middleware(['auth:sanctum', 'admin'])->post('/register', [AuthController::class, 'register']);
+    Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 });
 
 /*
@@ -258,6 +258,7 @@ Route::prefix('v1')->group(function () {
              */
             Route::get('/users', [UserController::class, 'index']);
             Route::post('/users', [UserController::class, 'store']);
+            Route::post('/users/provider-with-service', [UserController::class, 'storeProviderWithService']);
             Route::get('/users/{user}', [UserController::class, 'show']);
             Route::put('/users/{user}', [UserController::class, 'update']);
             Route::patch('/users/{user}/block', [UserController::class, 'toggleBlock']);

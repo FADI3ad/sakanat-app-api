@@ -31,7 +31,7 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        
+        return (new UserController())->store($request);
     }
 
     public function logout(Request $request)

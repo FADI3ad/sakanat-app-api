@@ -80,6 +80,54 @@ Content-Type: application/json
 
 ---
 
+### 🔴 [Admin Only] إنشاء / تسجيل حساب جديد (Register User Account)
+- **Method**: `POST`
+- **URL**: `/api/v1/auth/register` (أو `/api/v1/admin/users`)
+- **Auth**: `auth:sanctum`, `admin` (يتم إنشاء الحسابات بواسطة الأدمن فقط)
+- **Request Body Parameters**:
+  - `name` (string, required): اسم المستخدم
+  - `email` (string, required, unique): البريد الإلكتروني
+  - `phone` (string, required, unique): رقم الهاتف
+  - `password` (string, required, min: 6): كلمة المرور
+  - `type` (string, required): نوع المستخدم (`provider` | `resident` | `property_owner` | `admin`)
+  - `type_id` (integer, **مطلوب إذا كان النوع `provider`**): معرّف نوع الخدمة / التخصص الذي سيتخصص فيه المزود وينزل خدماته تحتها من جدول الأنواع (`exists:types,id`).
+
+- **Example Request Body (تسجيل مزود خدمة وتحديد التخصص)**:
+```json
+{
+  "name": "مطعم البرنس",
+  "email": "elprince@example.com",
+  "phone": "01099887766",
+  "password": "password123",
+  "type": "provider",
+  "type_id": 2
+}
+```
+
+- **Response (201 Created)**:
+```json
+{
+  "status": true,
+  "message": "تم إنشاء المستخدم بنجاح",
+  "data": {
+    "id": 15,
+    "name": "مطعم البرنس",
+    "email": "elprince@example.com",
+    "phone": "01099887766",
+    "type": "provider",
+    "is_blocked": false,
+    "created_at": "2026-08-21T17:20:00.000000Z",
+    "provider": {
+      "id": 8,
+      "type_id": 2,
+      "type_name": "مطاعم"
+    }
+  }
+}
+```
+
+---
+
 ### 🔴 [Admin] عرض جميع المستخدمين
 - **Method**: `GET`
 - **URL**: `/api/v1/admin/users`
@@ -120,29 +168,126 @@ Content-Type: application/json
 - **Method**: `POST`
 - **URL**: `/api/v1/admin/users`
 - **Auth**: `auth:sanctum`, `admin`
-- **Request Body**:
+- **Request Body Parameters**:
+  - `name` (string, required): اسم المستخدم
+  - `email` (string, required, unique): البريد الإلكتروني
+  - `phone` (string, required, unique): رقم الهاتف
+  - `password` (string, required, min: 6): كلمة المرور
+  - `type` (string, required): نوع المستخدم (`provider` | `resident` | `property_owner` | `admin`)
+  - `type_id` (integer, optional/recommended if type is `provider`): معرّف نوع الخدمة/التخصص من جدول الأنواع (`exists:types,id`). عند تعيينه لمزود الخدمة، سيلتزم بإضافة جميع خدماته تحت هذا التخصص.
+
+- **Example Request Body (إنشاء مزود خدمة بتخصص معين)**:
 ```json
 {
-  "name": "محمد علي",
-  "email": "mohamed@example.com",
-  "phone": "01123456789",
+  "name": "مطعم البرنس",
+  "email": "elprince@example.com",
+  "phone": "01099887766",
   "password": "password123",
-  "type": "property_owner"
+  "type": "provider",
+  "type_id": 2
 }
 ```
+
 - **Response (201 Created)**:
 ```json
 {
   "status": true,
   "message": "تم إنشاء المستخدم بنجاح",
   "data": {
-    "id": 3,
-    "name": "محمد علي",
-    "email": "mohamed@example.com",
-    "phone": "01123456789",
-    "type": "property_owner",
+    "id": 15,
+    "name": "مطعم البرنس",
+    "email": "elprince@example.com",
+    "phone": "01099887766",
+    "type": "provider",
     "is_blocked": false,
-    "created_at": "2026-08-17T12:00:00.000000Z"
+    "created_at": "2026-08-21T17:00:00.000000Z",
+    "provider": {
+      "id": 8,
+      "type_id": 2,
+      "type_name": "مطاعم"
+    }
+  }
+}
+```
+
+---
+
+### 🔴 [Admin] إضافة حساب مستخدم + الخدمة والتصنيف مباشرة (Direct Endpoint)
+- **Method**: `POST`
+- **URL**: `/api/v1/admin/users/provider-with-service`
+- **Auth**: `auth:sanctum`, `admin`
+- **Content-Type**: `multipart/form-data` أو `application/json`
+- **Request Body (Parameters)**:
+  - **بيانات حساب المستخدم**:
+    - `name` (string, required): اسم المستخدم / مزود الخدمة
+    - `email` (string, required, unique): البريد الإلكتروني
+    - `phone` (string, required, unique): رقم الهاتف
+    - `password` (string, required, min: 6): كلمة المرور
+    - `type` (string, optional, default: `"provider"`): نوع المستخدم (`provider` | `resident` | `property_owner` | `admin`)
+  - **بيانات تصنيف / نوع الخدمة (Type)**:
+    - `type_id` (integer, required): معرف نوع خدمة موجود مسبقاً من جدول الأنواع (`exists:types,id`)
+  - **بيانات الخدمة (Service)**:
+    - `title` (string, required): عنوان الخدمة
+    - `description` (string, optional): وصف الخدمة
+    - `price` (numeric, required): سعر الخدمة
+    - `area_id` (integer, required): معرف المنطقة الجغرافية
+    - `delevery_available` / `delivery_available` (boolean, optional, default: `false`): توفر التوصيل
+    - `is_available` (boolean, optional, default: `true`): توفر الخدمة
+    - `image` (file/image, optional): صورة الخدمة (jpeg, png, jpg, webp - max: 2MB)
+
+- **Example Request Body (JSON)**:
+```json
+{
+  "name": "مطعم البرنس",
+  "email": "elprince@example.com",
+  "phone": "01099887766",
+  "password": "password123",
+  "type": "provider",
+  "type_id": 2,
+  "title": "وجبة كبدة وقوانص مشوية",
+  "description": "وجبة كبدة بلدي طازجة مع أرز وسلطات",
+  "price": 120.00,
+  "area_id": 1,
+  "delevery_available": true,
+  "is_available": true
+}
+```
+
+- **Response (201 Created)**:
+```json
+{
+  "status": true,
+  "message": "تم إنشاء حساب المستخدم وإضافة الخدمة بنجاح",
+  "data": {
+    "user": {
+      "id": 15,
+      "name": "مطعم البرنس",
+      "email": "elprince@example.com",
+      "phone": "01099887766",
+      "type": "provider",
+      "is_blocked": false,
+      "created_at": "2026-08-21T16:53:00.000000Z"
+    },
+    "provider": {
+      "id": 8,
+      "user_id": 15
+    },
+    "type": {
+      "id": 2,
+      "name": "مطاعم",
+      "description": "جميع المطاعم والمأكولات"
+    },
+    "service": {
+      "id": 12,
+      "title": "وجبة كبدة وقوانص مشوية",
+      "description": "وجبة كبدة بلدي طازجة مع أرز وسلطات",
+      "image": "http://localhost:8000/storage/services/abc123.jpg",
+      "price": "120.00",
+      "is_available": true,
+      "delivery_available": true,
+      "area": "منطقة الجامعة",
+      "created_at": "2026-08-21T16:53:00.000000Z"
+    }
   }
 }
 ```
@@ -350,6 +495,62 @@ Content-Type: application/json
 - **Method**: `GET`
 - **URL**: `/api/v1/services/{service}/owner`
 - **Auth**: Public
+
+### 🟡 [Provider] إنشاء خدمة جديدة
+- **Method**: `POST`
+- **URL**: `/api/v1/services`
+- **Auth**: `auth:sanctum`, `provider`
+- **Content-Type**: `multipart/form-data` أو `application/json`
+- **Request Body Parameters**:
+  - `title` (string, required): عنوان الخدمة (max: 255)
+  - `description` (string, optional): وصف الخدمة
+  - `price` (numeric, required): سعر الخدمة (min: 0)
+  - `area_id` (integer, required): معرّف المنطقة الجغرافية (`exists:areas,id`)
+  - `delevery_available` (boolean, required): توفر خدمة التوصيل (`true` / `false`)
+  - `is_available` (boolean, optional, default: `true`): حالة توفر الخدمة
+  - `type_id` (integer, optional/required): معرّف نوع الخدمة/التخصص (`exists:types,id`).
+    > 💡 **ملاحظة شروط `type_id`**:
+    > - إذا كان للأدمن تحديد `type_id` لحساب مزود الخدمة أثناء إنشائه، فإن هذا الحقل **اختياري** وسيتم تعيينه تلقائياً لنفس التخصص المعتمد.
+    > - إذا تم إرسال `type_id` مختلف عن التخصص المعتمد للمزود، سيتم رفض الطلب بـ `422 Unprocessable Entity`.
+    > - إذا لم يحدد الأدمن `type_id` للمزود سابقاً، فإن إرسال `type_id` في أول خدمة يُنشئها سيثبّت هذا التخصص لحسابه مستقبلاً.
+  - `image` (file/image, optional): صورة الخدمة (jpeg, png, jpg, webp - max: 2MB)
+
+- **Example Request Body (JSON)**:
+```json
+{
+  "title": "وجبة مشويات كباب وكفتة",
+  "description": "وجبة مشويات فاخرة مع السلطات والمقبلات",
+  "price": 180.00,
+  "area_id": 1,
+  "delevery_available": true,
+  "is_available": true
+}
+```
+
+- **Response (201 Created)**:
+```json
+{
+  "status": true,
+  "message": "تم إضافة الخدمة بنجاح",
+  "data": {
+    "id": 25,
+    "title": "وجبة مشويات كباب وكفتة",
+    "description": "وجبة مشويات فاخرة مع السلطات والمقبلات",
+    "image": "http://localhost:8000/storage/services/xyz123.jpg",
+    "is_available": true,
+    "delivery_available": true,
+    "price": "180.00",
+    "area": "منطقة الجامعة",
+    "type": "مطاعم",
+    "provider": {
+      "id": 15,
+      "provider_id": 8,
+      "name": "مطعم البرنس",
+      "phone": "01099887766"
+    }
+  }
+}
+```
 
 ### 🔴 [Admin] عرض جميع الخدمات للإشراف
 - **Method**: `GET`

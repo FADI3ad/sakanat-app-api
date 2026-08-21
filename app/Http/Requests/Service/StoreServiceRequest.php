@@ -13,6 +13,8 @@ class StoreServiceRequest extends FormRequest
 
     public function rules(): array
     {
+        $hasAssignedType = (bool) $this->user()?->provider?->type_id;
+
         return [
             'title'              => ['required', 'string', 'max:255'],
             'description'        => ['nullable', 'string'],
@@ -21,7 +23,7 @@ class StoreServiceRequest extends FormRequest
             'delevery_available' => ['required', 'boolean'],
             'price'              => ['required', 'numeric', 'min:0'],
             'area_id'            => ['required', 'integer', 'exists:areas,id'],
-            'type_id'            => ['required', 'integer', 'exists:types,id'],
+            'type_id'            => [$hasAssignedType ? 'nullable' : 'required', 'integer', 'exists:types,id'],
         ];
     }
 

@@ -19,6 +19,14 @@ class Provider extends Model
     }
 
     /**
+     * Get the service type assigned to this provider.
+     */
+    public function type(): BelongsTo
+    {
+        return $this->belongsTo(Type::class);
+    }
+
+    /**
      * Get all services listed by this provider.
      */
     public function services(): HasMany

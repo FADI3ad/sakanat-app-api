@@ -58,14 +58,37 @@ class ServiceController extends Controller
         $user = $request->user();
         $provider = Provider::firstOrCreate(['user_id' => $user->id]);
 
-        // Check: provider can only have services of a single type
-        $existingType = Service::where('provider_id', $provider->id)->value('type_id');
+        $requestTypeId = $request->input('type_id');
 
-        if ($existingType && (int) $existingType !== (int) $request->type_id) {
-            return response()->json([
-                'status' => false,
-                'message' => 'لا يمكنك إضافة خدمة بنوع مختلف، جميع خدماتك يجب أن تكون من نفس النوع (تخصص واحد فقط).',
-            ], 422);
+        if ($provider->type_id) {
+            if ($requestTypeId && (int) $requestTypeId !== (int) $provider->type_id) {
+                return response()->json([
+                    'status'  => false,
+                    'message' => 'لا يمكنك إضافة خدمة بنوع مختلف، جميع خدماتك يجب أن تكون من نفس النوع (تخصص واحد فقط).',
+                ], 422);
+            }
+            $targetTypeId = $provider->type_id;
+        } else {
+            $existingType = Service::where('provider_id', $provider->id)->value('type_id');
+            if ($existingType) {
+                if ($requestTypeId && (int) $requestTypeId !== (int) $existingType) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'لا يمكنك إضافة خدمة بنوع مختلف، جميع خدماتك يجب أن تكون من نفس النوع (تخصص واحد فقط).',
+                    ], 422);
+                }
+                $targetTypeId = $existingType;
+                $provider->update(['type_id' => $existingType]);
+            } else {
+                if (!$requestTypeId) {
+                    return response()->json([
+                        'status'  => false,
+                        'message' => 'نوع الخدمة (type_id) مطلوب.',
+                    ], 422);
+                }
+                $targetTypeId = $requestTypeId;
+                $provider->update(['type_id' => $targetTypeId]);
+            }
         }
 
         $data = $request->validated();
@@ -75,31 +98,32 @@ class ServiceController extends Controller
         }
 
         $data['delevery_available'] = $request->boolean('delevery_available');
-        $data['is_available'] = $request->boolean('is_available', true);
-        $data['provider_id'] = $provider->id;
+        $data['is_available']       = $request->boolean('is_available', true);
+        $data['provider_id']        = $provider->id;
+        $data['type_id']            = $targetTypeId;
 
         $service = Service::create($data);
 
         $service->load(['provider.user', 'area', 'type']);
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'تم إضافة الخدمة بنجاح',
-            'data' => [
-                'id' => $service->id,
-                'title' => $service->title,
-                'description' => $service->description,
-                'image' => $service->image ? asset('storage/'.$service->image) : null,
-                'is_available' => (bool) $service->is_available,
+            'data'    => [
+                'id'                 => $service->id,
+                'title'              => $service->title,
+                'description'        => $service->description,
+                'image'              => $service->image ? asset('storage/'.$service->image) : null,
+                'is_available'       => (bool) $service->is_available,
                 'delivery_available' => (bool) $service->delevery_available,
-                'price' => $service->price,
-                'area' => $service->area?->name,
-                'type' => $service->type?->name,
-                'provider' => [
-                    'id' => $service->provider?->user_id,
+                'price'              => $service->price,
+                'area'               => $service->area?->name,
+                'type'               => $service->type?->name,
+                'provider'           => [
+                    'id'          => $service->provider?->user_id,
                     'provider_id' => $service->provider?->id,
-                    'name' => $service->provider?->user?->name,
-                    'phone' => $service->provider?->user?->phone,
+                    'name'        => $service->provider?->user?->name,
+                    'phone'       => $service->provider?->user?->phone,
                 ],
             ],
         ], 201);
@@ -168,16 +192,25 @@ class ServiceController extends Controller
             ], 403);
         }
 
-        if ($request->has('type_id') && (int) $request->type_id !== (int) $service->type_id) {
-            $hasOtherServices = Service::where('provider_id', $provider->id)
-                ->where('id', '!=', $service->id)
-                ->exists();
-
-            if ($hasOtherServices) {
+        if ($request->has('type_id')) {
+            $assignedTypeId = $provider->type_id;
+            if ($assignedTypeId && (int) $request->type_id !== (int) $assignedTypeId) {
                 return response()->json([
-                    'status' => false,
-                    'message' => 'لا يمكنك تغيير نوع الخدمة لأن لديك خدمات أخرى مسجلة بنفس النوع الحالي.',
+                    'status'  => false,
+                    'message' => 'لا يمكنك تغيير نوع الخدمة إلى نوع مختلف عن التخصص المخصص لحسابك.',
                 ], 422);
+            }
+            if (! $assignedTypeId && (int) $request->type_id !== (int) $service->type_id) {
+                $hasOtherServices = Service::where('provider_id', $provider->id)
+                    ->where('id', '!=', $service->id)
+                    ->exists();
+
+                if ($hasOtherServices) {
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'لا يمكنك تغيير نوع الخدمة لأن لديك خدمات أخرى مسجلة بنفس النوع الحالي.',
+                    ], 422);
+                }
             }
         }
 
